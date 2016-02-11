@@ -55,7 +55,7 @@ def do_sign(buffer):
                     freq = float(movement["freq"])
                     emotion = movement["emotion_name"]
                     text = movement["text"]
-                    time = float(movement["emotion_time"][0])
+                    time = movement["emotion_time"]
                     sign = movement["position"]
                     motor_to_release = [mtr for mtr in old_motors if (mtr not in names) & (mtr not in torso)]
                     if motor_to_release:
@@ -78,7 +78,8 @@ def do_sign(buffer):
                         show.name = text
                     else:
                         HEAD_PUB = None
-                    show.time = time
+                    if time:
+                        show.time = time
                     tools.do_seq(names, freq, sign, pub, L, R, HEAD_PUB, show)
                     right_hand = sign[str(frames - 1)]["Right_hand"]
                     left_hand  = sign[str(frames - 1)]["Left_hand"]
