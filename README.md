@@ -18,7 +18,7 @@ Installation:
 
   ROS:
   
-    install ROS Kinetic wiki.ros.org/kinetic/Installation/Ubuntu
+  install ROS Kinetic wiki.ros.org/kinetic/Installation/Ubuntu
     
   I2C:
 
