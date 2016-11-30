@@ -1,5 +1,7 @@
 # robot
-this package need : ROS indigo
+The system is tested on ubuntu Xenial armhf
+image avalaible on MEGA Cloud https://mega.nz/#!oIFhUZLa!K1EM5aygbKRRNzjF8cbqpAs_myevqVCU3P7QGwaH8RE
+this package need : ROS Kinetic 
 
                     I2C tools 
                     
@@ -17,29 +19,12 @@ Installation:
     
   I2C:
   
-    first you need to update the kernel
-    
-    $ sudo odroid-utility.sh 
-    
-    In Update your Kernel/Firmware select Update Kernel
-    
+        
     $ sudo apt-get update
     $ sudo apt-get install python-smbus
     $ sudo apt-get install i2c-tools
     
-    configurate the i2c to start automaticly
     
-    $ sudo nano /etc/modules
-    
-    in the end of the file add :
-    
-      i2c-gpio-custom bus0=4,209,210      
-      i2c-dev
-      aml_i2c
-      
-    reboot your system 
-    
-      $ sudo reboot
   
   Python packages:
   
@@ -55,7 +40,7 @@ Installation:
 
     $ cd catkin_ws/src
 
-    $ git clone https://github.com/mekhtiche/robot.git
+    $ git clone https://github.com/mekhtiche/robot_new.git
 
     $ cd ..
 
