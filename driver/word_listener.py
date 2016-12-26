@@ -4,23 +4,25 @@ import json
 import rospy
 import time
 from std_msgs.msg import String
-from robot.msg import motorSet
-from robot.msg import motorStat
-from robot.msg import servoSet
+from robot_body.msg import motorSet
+from robot_body.msg import motorStat
+from robot_body.msg import servoSet
 print "WORD_LISTENNER successful import"
 
 pub = dict()
 motorStatus = dict()
 motor = motorSet()
-servoPub = rospy.Publisher('servo/cmd', servoSet, queue_size=10)
-command = servoSet()
+RservoPub = rospy.Publisher('servo/Rcmd', servoSet, queue_size=10)
+LservoPub = rospy.Publisher('servo/Lcmd', servoSet, queue_size=10)
+Rcmd = servoSet()
+Lcmd = servoSet()
 
 def getMotorInfo(data, name):
     motorStatus[name] = data
 
 def callback(data):
     try:
-        with open("/home/odroid/catkin_ws/src/robot/recording/data_base/"+ data.data + ".json", "r") as sign:
+        with open("/home/odroid/catkin_ws/src/robot_body/recording/data_base/"+ data.data + ".json", "r") as sign:
             movement = json.load(sign)
 
         names = movement["actors_NAME"]
@@ -39,9 +41,11 @@ def callback(data):
                 pub[name].publish(motor)
                 id += 1
 
-            command.right_cmd = seq[str(frame)]['Right_hand']
-            command.left_cmd = seq[str(frame)]['Left_hand']
-            servoPub.publish(command)
+            Rcmd = seq[str(frame)]['Right_hand']
+            Lcmd = seq[str(frame)]['Left_hand']
+            RservoPub.publish(Rcmd)
+            LservoPub.publish(Lcmd)
+
             time.sleep(1/freq)
 
 

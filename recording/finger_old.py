@@ -5,11 +5,8 @@ import tkMessageBox
 import tkSimpleDialog
 from Tkinter import *
 # import robot.servo.Adafruit_PWM_Servo_Driver.PWM as PWM
-# from servo.Adafruit_PWM_Servo_Driver import PWM
+from servo.Adafruit_PWM_Servo_Driver import PWM
 # import thread
-import rospy
-from robot_body.msg import servoSet
-from robot_body.msg import servoCmd
 import pypot
 import json
 import numpy as np
@@ -17,27 +14,11 @@ import setNewHand
 # ===========================================================================
 # Example Code
 # ===========================================================================
-#DEBUG = 1
-#Lpwm = PWM(0x41, 4) # , debug = True  # for debuging the code and see what it send from the bus
-#Rpwm = PWM(0x40, 4) # 42
-#Lpwm.setPWMFreq(30)
-#Rpwm.setPWMFreq(30)
-#global srl
-#srl = serial.Serial('/dev/ttyACM1', 19200)
-#time.sleep(3)
-global RservoPub, LservoPub, rservoPub, lservoPub
-
-RservoPub = rospy.Publisher('servo/Rcmd', servoSet, queue_size=10)
-LservoPub = rospy.Publisher('servo/Lcmd', servoSet, queue_size=10)
-rservoPub = rospy.Publisher('servo/rcmd', servoCmd, queue_size=10)
-lservoPub = rospy.Publisher('servo/lcmd', servoCmd, queue_size=10)
-Rcmd = servoSet()
-Lcmd = servoSet()
-cmd  = servoCmd()
-
-
-
-
+DEBUG = 1
+Lpwm = PWM(0x41, 4) # , debug = True  # for debuging the code and see what it send from the bus
+Rpwm = PWM(0x40, 4) # 42
+Lpwm.setPWMFreq(30)
+Rpwm.setPWMFreq(30)
 
 def __init__(master, movement, robot = None ):
 
@@ -45,7 +26,6 @@ def __init__(master, movement, robot = None ):
 #    master = Tk()
     master.geometry('915x855')
     master.title('SETTING THE HAND')
-    rospy.init_node('Fingers_set', anonymous=True)
     title = Frame(master)
     title.grid(row=0, column=0, columnspan=3, sticky=W+E+N+S)
     info = Label(title, justify=LEFT, text='play the recorded sign using the slider in the blue section and set the hand configuration using \n'
@@ -78,18 +58,16 @@ def __init__(master, movement, robot = None ):
     for m in master.robot.Dead_motors:
         m.goal_position = 0
 
-    with open('/home/odroid/catkin_ws/src/robot_body/recording/Poppy_torso.json', 'r') as f:
+    with open('/home/odroid/catkin_ws/src/robot/recording/Poppy_torso.json', 'r') as f:
         config = json.load(f)
     Rcfg = config['Right_Setting']
     Lcfg = config['Left_Setting']
 
 
-#//////////////////////////////////////////////////////////////////////////LEFT  ARM////////////////////////////////////////////////////////////////////////
+
     def LgetValue1(event):
             #print(master.Lwrist_V.get())
-            cmd.motor = 1
-            cmd.command = master.Lwrist_V.get()
-            lservoPub.publish(cmd)
+            Lpwm.setPWM(1, 0, master.Lwrist_V.get())
 
     master.Lwrist_V = Scale(lefthand, label = "wrist_V N:1", from_=Lcfg['1'][0], to =Lcfg['1'][1], orient = HORIZONTAL, length = 300, command = LgetValue1)
     master.Lwrist_V.set(200)
@@ -97,9 +75,7 @@ def __init__(master, movement, robot = None ):
 
     def LgetValue2(event):
             #print(master.Lwrist_H.get())
-            cmd.motor = 2
-            cmd.command = master.Lwrist_H.get()
-            lservoPub.publish(cmd)
+            Lpwm.setPWM(2, 0, master.Lwrist_H.get())
 
     master.Lwrist_H = Scale(lefthand, label = "wrist_H N:2", from_=Lcfg['2'][0], to =Lcfg['2'][1], orient = HORIZONTAL, length = 300, command = LgetValue2)
     master.Lwrist_H.set(200)
@@ -107,9 +83,7 @@ def __init__(master, movement, robot = None ):
 
     def LgetValue3(event):
             #print(master.Lthump_J.get())
-            cmd.motor = 3
-            cmd.command = master.Lthump_J.get()
-            lservoPub.publish(cmd)
+            Lpwm.setPWM(3, 0, master.Lthump_J.get())
 
     master.Lthump_J = Scale(lefthand, label = "Thump_J N:3", from_=Lcfg['3'][0], to =Lcfg['3'][1], orient = HORIZONTAL, length = 300, command = LgetValue3)
     master.Lthump_J.set(202)
@@ -117,9 +91,7 @@ def __init__(master, movement, robot = None ):
 
     def LgetValue4(event):
             #print(master.Lthump.get())
-            cmd.motor = 4
-            cmd.command = master.Lthump.get()
-            lservoPub.publish(cmd)
+            Lpwm.setPWM(4, 0, master.Lthump.get())
 
     master.Lthump = Scale(lefthand, label = "Thump N:4", from_=Lcfg['4'][0], to =Lcfg['4'][1], orient = HORIZONTAL, length = 300, command = LgetValue4)
     master.Lthump.set(280)
@@ -127,9 +99,7 @@ def __init__(master, movement, robot = None ):
 
     def LgetValue5(event):
             #print(master.LOpen.get())
-            cmd.motor = 5
-            cmd.command = master.LOpen.get()
-            lservoPub.publish(cmd)
+            Lpwm.setPWM(5, 0, master.LOpen.get())
 
     master.LOpen = Scale(lefthand, label = "Open N:5", from_=Lcfg['5'][0], to =Lcfg['5'][1], orient = HORIZONTAL, length = 300, command = LgetValue5)
     master.LOpen.set(233)
@@ -137,9 +107,7 @@ def __init__(master, movement, robot = None ):
 
     def LgetValue6(event):
             #print(master.Lindex.get())
-            cmd.motor = 6
-            cmd.command = master.Lindex.get()
-            lservoPub.publish(cmd)
+            Lpwm.setPWM(6, 0, master.Lindex.get())
 
     master.Lindex = Scale(lefthand, label = "Index N:6", from_=Lcfg['6'][0], to =Lcfg['6'][1], orient = HORIZONTAL, length = 300, command = LgetValue6)
     master.Lindex.set(270)
@@ -147,9 +115,7 @@ def __init__(master, movement, robot = None ):
 
     def LgetValue7(event):
             #print(master.Lmajor.get())
-            cmd.motor = 7
-            cmd.command = master.Lmajor.get()
-            lservoPub.publish(cmd)
+            Lpwm.setPWM(7, 0, master.Lmajor.get())
 
     master.Lmajor = Scale(lefthand, label = "Major N:7", from_=Lcfg['7'][0], to =Lcfg['7'][1], orient = HORIZONTAL, length = 300, command = LgetValue7)
     master.Lmajor.set(115)
@@ -157,9 +123,7 @@ def __init__(master, movement, robot = None ):
 
     def LgetValue8(event):
             #print(master.Lring.get())
-            cmd.motor = 8
-            cmd.command = master.Lring.get()
-            lservoPub.publish(cmd)
+            Lpwm.setPWM(8, 0, master.Lring.get())
 
     master.Lring = Scale(lefthand, label = "Ring N:8", from_=Lcfg['8'][0], to =Lcfg['8'][1], orient = HORIZONTAL, length = 300, command = LgetValue8)
     master.Lring.set(110)
@@ -167,22 +131,16 @@ def __init__(master, movement, robot = None ):
 
     def LgetValue9(event):
             #print(master.Lauri.get())
-            cmd.motor = 9
-            cmd.command = master.Lauri.get()
-            lservoPub.publish(cmd)
+            Lpwm.setPWM(9, 0, master.Lauri.get())
 
     master.Lauri = Scale(lefthand, label = "Auriculaire N:9", from_=Lcfg['9'][0], to =Lcfg['9'][1], orient = HORIZONTAL, length = 300, command = LgetValue9)
     master.Lauri.set(110)
     master.Lauri.pack()
-#//////////////////////////////////////////////////////////////////////////LEFT  ARM////////////////////////////////////////////////////////////////////////
 
-
-#//////////////////////////////////////////////////////////////////////////RIGHT ARM////////////////////////////////////////////////////////////////////////
+#////////////////////////////////////RIGHT ARM////////////////////////////////////////////////////////////////////////
     def RgetValue1(event):
         # print(master.Rwrist_V.get())
-        cmd.motor = 1
-        cmd.command = master.Rwrist_V.get()
-        rservoPub.publish(cmd)
+        Rpwm.setPWM(1, 0, master.Rwrist_V.get())
 
 
     master.Rwrist_V = Scale(righthand, label="wrist_V N:1", from_=Rcfg['1'][0], to=Rcfg['1'][1], orient=HORIZONTAL, length=300,
@@ -193,9 +151,7 @@ def __init__(master, movement, robot = None ):
 
     def RgetValue2(event):
         # print(master.Rwrist_H.get())
-        cmd.motor = 2
-        cmd.command = master.Rwrist_H.get()
-        rservoPub.publish(cmd)
+        Rpwm.setPWM(2, 0, master.Rwrist_H.get())
 
 
     master.Rwrist_H = Scale(righthand, label="wrist_H N:2", from_=Rcfg['2'][0], to=Rcfg['2'][1], orient=HORIZONTAL, length=300,
@@ -206,9 +162,7 @@ def __init__(master, movement, robot = None ):
 
     def RgetValue3(event):
         # print(master.Rthump_J.get())
-        cmd.motor = 3
-        cmd.command = master.Rthump_J.get()
-        rservoPub.publish(cmd)
+        Rpwm.setPWM(3, 0, master.Rthump_J.get())
 
 
     master.Rthump_J = Scale(righthand, label="Thump_J N:3", from_=Rcfg['3'][0], to=Rcfg['3'][1], orient=HORIZONTAL, length=300,
@@ -219,9 +173,7 @@ def __init__(master, movement, robot = None ):
 
     def RgetValue4(event):
         # print(master.Rthump.get())
-        cmd.motor = 4
-        cmd.command = master.Rthump.get()
-        rservoPub.publish(cmd)
+        Rpwm.setPWM(4, 0, master.Rthump.get())
 
 
     master.Rthump = Scale(righthand, label="Thump N:4", from_=Rcfg['4'][0], to=Rcfg['4'][1], orient=HORIZONTAL, length=300, command=RgetValue4)
@@ -231,9 +183,7 @@ def __init__(master, movement, robot = None ):
 
     def RgetValue5(event):
         # print(master.ROpen.get())
-        cmd.motor = 5
-        cmd.command = master.ROpen.get()
-        rservoPub.publish(cmd)
+        Rpwm.setPWM(5, 0, master.ROpen.get())
 
 
     master.ROpen = Scale(righthand, label="Open N:5", from_=Rcfg['5'][0], to=Rcfg['5'][1], orient=HORIZONTAL, length=300, command=RgetValue5)
@@ -243,9 +193,7 @@ def __init__(master, movement, robot = None ):
 
     def RgetValue6(event):
         # print(master.Rindex.get())
-        cmd.motor = 6
-        cmd.command = master.Rindex.get()
-        rservoPub.publish(cmd)
+        Rpwm.setPWM(6, 0, master.Rindex.get())
 
 
     master.Rindex = Scale(righthand, label="Index N:6", from_=Rcfg['6'][0], to=Rcfg['6'][1], orient=HORIZONTAL, length=300, command=RgetValue6)
@@ -255,9 +203,7 @@ def __init__(master, movement, robot = None ):
 
     def RgetValue7(event):
         # print(master.Rmajor.get())
-        cmd.motor = 7
-        cmd.command = master.Rmajor.get()
-        rservoPub.publish(cmd)
+        Rpwm.setPWM(7, 0, master.Rmajor.get())
 
 
     master.Rmajor = Scale(righthand, label="Major N:7", from_=Rcfg['7'][0], to=Rcfg['7'][1], orient=HORIZONTAL, length=300, command=RgetValue7)
@@ -267,9 +213,7 @@ def __init__(master, movement, robot = None ):
 
     def RgetValue8(event):
         # print(master.Rring.get())
-        cmd.motor = 8
-        cmd.command = master.Rring.get()
-        rservoPub.publish(cmd)
+        Rpwm.setPWM(8, 0, master.Rring.get())
 
 
     master.Rring = Scale(righthand, label="Ring N:8", from_=Rcfg['8'][0], to=Rcfg['8'][1], orient=HORIZONTAL, length=300, command=RgetValue8)
@@ -279,25 +223,22 @@ def __init__(master, movement, robot = None ):
 
     def RgetValue9(event):
         # print(master.Rauri.get())
-        cmd.motor = 9
-        cmd.command = master.Rauri.get()
-        rservoPub.publish(cmd)
+        Rpwm.setPWM(9, 0, master.Rauri.get())
 
 
     master.Rauri = Scale(righthand, label="Auriculaire N:9", from_=Rcfg['9'][0], to=Rcfg['9'][1], orient=HORIZONTAL, length=300,
                          command=RgetValue9)
     master.Rauri.set(110)
     master.Rauri.pack()
-#//////////////////////////////////////////////////////////////////////////RIGHT ARM////////////////////////////////////////////////////////////////////////
+#///////////////////////////////////////////RIGHT HAND/////////////////////////////////////////////////////////////
 
-    def callback(Lcommand=None, Rcommand=None):
-
-        if Lcommand is not None:
-            Lcmd = Lcommand
-            LservoPub.publish(Lcmd)
-        if Rcommand is not None:
-            Rcmd = Rcommand
-            RservoPub.publish(Rcmd)
+    def callback(Lcmd=None, Rcmd=None):
+        if Lcmd is not None:
+            for servoMotor in range(9):
+                Lpwm.setPWM(servoMotor+1, 0, Lcmd[servoMotor])
+        if Rcmd is not None:
+            for servoMotor in range(9):
+                Rpwm.setPWM(servoMotor+1, 0, Rcmd[servoMotor])
 
 
     def setframe(event):
@@ -353,7 +294,6 @@ def __init__(master, movement, robot = None ):
 	else:
 	    for m in master.robot.Active_motors:
                 m.compliant = True
-
         master.destroy()
 
     def savecall():
@@ -479,16 +419,16 @@ def __init__(master, movement, robot = None ):
         else:
             print "you Should enter the mane of the hand set"
 
-        with open("/home/odroid/catkin_ws/src/robot_body/recording/handSetting.json", "w") as h:
+        with open("/home/odroid/catkin_ws/src/robot/recording/handSetting.json", "w") as h:
             json.dump(handSetting, h)
 
     def Lrel():
-        callback([50] * 9, None)
-        # srl.write(struct.pack('cBBBBBBBBB', "L", 50, 50, 50, 50, 50, 50, 50, 50, 50))
+        for servoMotor in range(9):
+            Lpwm.setPWM(servoMotor + 1, 0, 0)
 
     def Rrel():
-        callback(None, [50] * 9)
-        # srl.write(struct.pack('cBBBBBBBBB', "R", 50, 50, 50, 50, 50, 50, 50, 50, 50))
+        for servoMotor in range(9):
+            Rpwm.setPWM(servoMotor + 1, 0, 0)
 
     close = Button(buttfram, text='Close', width=10, command=closecall)
     close.grid(row=6, column=4, sticky=E)
@@ -516,7 +456,7 @@ def __init__(master, movement, robot = None ):
     R_handSets = Listbox(medButt, height=10, width=15)
     R_handSets.grid(row=2, column=2, columnspan=2)
     try:
-        with open("/home/odroid/catkin_ws/src/robot_body/recording/handSetting.json", "r") as f:
+        with open("/home/odroid/catkin_ws/src/robot/recording/handSetting.json", "r") as f:
             handSetting = json.load(f)
 
         for name, pos in handSetting["Left"].items():
@@ -565,7 +505,7 @@ def __init__(master, movement, robot = None ):
         setupFrame = Toplevel()
         setupFrame.grab_set()
         setupFrame.transient(master)
-        setuphands = setNewHand.__init__(setupFrame, rservoPub, lservoPub)
+        setuphands = setNewHand.__init__(setupFrame)
 
 
     def refresh():
@@ -598,7 +538,7 @@ def __init__(master, movement, robot = None ):
 
         if list(L_handSets.curselection()):
             if tkMessageBox.askyesno(title='Warning', message='do you want to DELETE ' + L_handSets.get(L_handSets.curselection()) + ' ?'):
-                with open("/home/odroid/catkin_ws/src/robot_body/recording/handSetting.json") as f:
+                with open("/home/odroid/catkin_ws/src/robot/recording/handSetting.json") as f:
                     handSetting = json.load(f)
                 del handSetting["Left"][L_handSets.get(L_handSets.curselection())]
                 L_handSets.delete(L_handSets.curselection())
@@ -612,11 +552,11 @@ def __init__(master, movement, robot = None ):
 
         if list(R_handSets.curselection()):
             if tkMessageBox.askyesno(title='Warning', message='do you want to DELETE ' + R_handSets.get(R_handSets.curselection()) + ' ?'):
-                with open("/home/odroid/catkin_ws/src/robot_body/recording/handSetting.json", "r") as f:
+                with open("/home/odroid/catkin_ws/src/robot/recording/handSetting.json", "r") as f:
                     handSetting = json.load(f)
                 del handSetting["Right"][R_handSets.get(R_handSets.curselection())]
                 R_handSets.delete(R_handSets.curselection())
-                with open("/home/odroid/catkin_ws/src/robot_body/recording/handSetting.json", "w") as f:
+                with open("/home/odroid/catkin_ws/src/robot/recording/handSetting.json", "w") as f:
                     json.dump(handSetting, f)
         else:
             print "No setting is selected"

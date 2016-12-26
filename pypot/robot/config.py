@@ -295,9 +295,9 @@ robot_config = {
     "upper_body_controller": {
       "sync_read": True,
       "attached_motors": [
-       # "torso",
+        #"torso",
         "head",
-      #  "arms"
+        #"arms"
       ],
       "port": "auto"
     }
@@ -311,8 +311,8 @@ robot_config = {
       "r_shoulder_y",
       "r_shoulder_x",
       "r_arm_z",
-      "r_elbow_y",
-      "r_forearm_z"
+      "r_elbow_y"#,
+      #"r_forearm_z"
     ],
     "torso": [
       "abs_z",
@@ -323,8 +323,8 @@ robot_config = {
       "l_shoulder_y",
       "l_shoulder_x",
       "l_arm_z",
-      "l_elbow_y",
-      "l_forearm_z"
+      "l_elbow_y"#,
+      #"l_forearm_z"
     ],
     "arms": [
       "l_arm",

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>robot</name>
+  <name>robot_body</name>
   <version>0.0.0</version>
-  <description>The robot package</description>
+  <description>The robot_body package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->

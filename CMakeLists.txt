@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(robot)
+project(robot_body)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -53,6 +53,7 @@ motorStat.msg
 motorStatList.msg
 motorSet.msg
 servoSet.msg
+servoCmd.msg
  )
 
 ## Generate services in the 'srv' folder

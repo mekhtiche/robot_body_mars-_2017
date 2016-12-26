@@ -4,9 +4,9 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.par
 import thread
 import time
 import rospy
-from robot.msg import motorStat
-from robot.msg import motorStatList
-from robot.msg import motorSet
+from robot_body.msg import motorStat
+from robot_body.msg import motorStatList
+from robot_body.msg import motorSet
 from std_msgs.msg import String
 import pypot.robot
 print 'ROBOT succiful import'

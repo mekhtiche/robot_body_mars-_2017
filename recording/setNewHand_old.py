@@ -1,22 +1,22 @@
 import json
 from Tkinter import *
-from robot_body.msg import servoCmd
-# from servo.Adafruit_PWM_Servo_Driver import PWM
-# import serial
-# import struct
-# DEBUG = 1
-# Lpwm = PWM(0x41, 4) # , debug = True  # for debuging the code and see what it send from the bus
-# Rpwm = PWM(0x40, 4) # 42
-# Lpwm.setPWMFreq(30)
 
-cmd  = servoCmd()
+from servo.Adafruit_PWM_Servo_Driver import PWM
+
+DEBUG = 1
+Lpwm = PWM(0x41, 4) # , debug = True  # for debuging the code and see what it send from the bus
+Rpwm = PWM(0x40, 4) # 42
+Lpwm.setPWMFreq(30)
 
 
 
-def __init__(master, rservoPub, lservoPub):
+
+
+def __init__(master):
     master.geometry('505x240')
     master.title('Setup the servo motors of the hands')
-    with open('/home/odroid/catkin_ws/src/robot_new/recording/Poppy_torso.json', 'r') as f:
+
+    with open('/home/odroid/catkin_ws/src/robot/recording/Poppy_torso.json', 'r') as f:
         config = json.load(f)
 
     Right_config = config['Right_Setting']
@@ -26,18 +26,10 @@ def __init__(master, rservoPub, lservoPub):
 
     def getValue(event):
         #print var1.get()
-
-        cmd.motor = var2.get()
-        cmd.command = bar.get()
-
         if var1.get()==1:
-            rservoPub.publish(cmd)
+            Rpwm.setPWM(var2.get(), 0, bar.get())
         elif var1.get()==2:
-            lservoPub.publish(cmd)
-
-
-
-
+            Lpwm.setPWM(var2.get(), 0, bar.get())
 
     bar = Scale(master, label="Set the value", from_=0, to=400, orient=HORIZONTAL, length=400,
                          command=getValue)
@@ -49,7 +41,7 @@ def __init__(master, rservoPub, lservoPub):
             Right_config[str(var2.get())][0] = bar.get()
         elif var1.get()==2:
             Left_config[str(var2.get())][0] = bar.get()
-        with open("/home/odroid/catkin_ws/src/robot_new/recording/Poppy_torso.json", "w") as h:
+        with open("/home/odroid/catkin_ws/src/robot/recording/Poppy_torso.json", "w") as h:
             json.dump(config, h)
         print "value setted"
 
@@ -58,7 +50,7 @@ def __init__(master, rservoPub, lservoPub):
             Right_config[str(var2.get())][1] = bar.get()
         elif var1.get() == 2:
             Left_config[str(var2.get())][1] = bar.get()
-        with open("/home/odroid/catkin_ws/src/robot_new/recording/Poppy_torso.json", "w") as h:
+        with open("/home/odroid/catkin_ws/src/robot/recording/Poppy_torso.json", "w") as h:
             json.dump(config, h)
         print "value setted"
 
@@ -95,8 +87,10 @@ def __init__(master, rservoPub, lservoPub):
 
 
     def close():
-        
-
+        for servo in range(1, 10):
+            print "releasing the servo N: " + str(servo)
+            Rpwm.setPWM(servo, 0, 0)
+            Lpwm.setPWM(servo, 0, 0)
         master.destroy()
 
     closeBut = Button(master, text="Close", command=close)

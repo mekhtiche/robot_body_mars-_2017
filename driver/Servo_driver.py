@@ -2,44 +2,42 @@
 import sys,os.path
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
 import rospy
-from robot.msg import servoSet
-from servo.Adafruit_PWM_Servo_Driver import PWM
+import time
+from robot_body.msg import servoSet
+import serial
+import struct
+# from servo.Adafruit_PWM_Servo_Driver import PWM
 print "SERVO_DRIVER successful import"
 hand = ['Right', 'Left']
-DEBUG = 1
-Lpwm = PWM(0x41, 4)
-Rpwm = PWM(0x40, 4)
-Lpwm.setPWMFreq(30)
-Rpwm.setPWMFreq(30)
 
-
+srl = serial.Serial('/dev/ttySAC0', 115200)
 
 
 def doIt(Rcmd, Lcmd):
-    Rpwm.setPWM(1, 0, Rcmd[0])
-    Rpwm.setPWM(2, 0, Rcmd[1])
-    Rpwm.setPWM(3, 0, Rcmd[2])
-    Rpwm.setPWM(4, 0, Rcmd[3])
-    Rpwm.setPWM(5, 0, Rcmd[4])
-    Rpwm.setPWM(6, 0, Rcmd[5])
-    Rpwm.setPWM(7, 0, Rcmd[6])
-    Rpwm.setPWM(8, 0, Rcmd[7])
-    Rpwm.setPWM(9, 0, Rcmd[8])
+    # print srl
+    if Rcmd is not None:
+        srl.write(struct.pack('cBBBBBBBBB', "R", Rcmd[0] - 50, Rcmd[1] - 50, Rcmd[2] - 50,
+                              Rcmd[3] - 50, Rcmd[4] - 50, Rcmd[5] - 50,
+                              Rcmd[6] - 50, Rcmd[7] - 50, Rcmd[8] - 50))
+#    if Rcmd is not None:
+#        for i in range(9):
+#            srl.write(struct.pack('cBB', "r", i + 1, Rcmd[i] - 50))
 
-    Lpwm.setPWM(1, 0, Lcmd[0])
-    Lpwm.setPWM(2, 0, Lcmd[1])
-    Lpwm.setPWM(3, 0, Lcmd[2])
-    Lpwm.setPWM(4, 0, Lcmd[3])
-    Lpwm.setPWM(5, 0, Lcmd[4])
-    Lpwm.setPWM(6, 0, Lcmd[5])
-    Lpwm.setPWM(7, 0, Lcmd[6])
-    Lpwm.setPWM(8, 0, Lcmd[7])
-    Lpwm.setPWM(9, 0, Lcmd[8])
+    time.sleep(0.01)
 
+    if Lcmd is not None:
+        srl.write(struct.pack('cBBBBBBBBB', "L", Lcmd[0] - 50, Lcmd[1] - 50, Lcmd[2] - 50,
+                              Lcmd[3] - 50, Lcmd[4] - 50, Lcmd[5] - 50,
+                              Lcmd[6] - 50, Lcmd[7] - 50, Lcmd[8] - 50))
+
+#    if Lcmd is not None:
+#        for i in range(9):
+#            srl.write(struct.pack('cBB', "l", i + 1, Lcmd[i] - 50))
+    
 
 
 def callback(data):
-    #print data
+
     doIt(data.right_cmd, data.left_cmd)
 
 
@@ -52,3 +50,5 @@ if __name__ == '__main__':
     rospy.Subscriber('servo/cmd', servoSet, callback=callback)
     print 'SERVO_DRIVER publishers & subscribers successful Initial'
     rospy.spin()
+    print 'Closing the serial port'
+    
