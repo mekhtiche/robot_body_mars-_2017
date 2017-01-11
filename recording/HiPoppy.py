@@ -2,6 +2,10 @@
 # -*- coding: UTF-8 -*-  # this is to add arabic coding to python
 import sys,os.path
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
+import rospy
+from robot_body.msg import motorSet
+from robot_body.msg import motorStat
+import thread
 import json
 import time
 import tkFileDialog
@@ -9,9 +13,8 @@ import tkMessageBox
 from Tkinter import *
 from timeit import default_timer
 from pypot.robot import config
+import robot_tools.robot_tools as tools
 import finger
-
-#import pypot.
 
 
 class REC():
@@ -42,20 +45,6 @@ class REC():
                 self.check(key,stt)
             else:
                 self.selUsel(stt, [self.lcb.index(key)])
-
-
-#        if index == 0:
-#            self.selUsel(stt, range(0, 21, 1))
-#        elif index == 1:
-#            self.selUsel(stt, [2, 3, 4])
-#        elif index == 5:
-#            self.selUsel(stt, [6, 7])
-#        elif index == 8:
-#            self.selUsel(stt, range(9, 21, 1))
-#        elif index == 9:
-#            self.selUsel(stt, range(10, 15, 1))
-#        elif index == 15:
-#            self.selUsel(stt, range(16, 21, 1))
 
 
 
@@ -156,49 +145,36 @@ class REC():
         print 'Openning the file: ' + recFile
         with open(recFile, "r") as sign:
             self.movement = json.load(sign)
-        mtrs = self.movement['actors_NAME']
-        #print mtrs
         edit_fram = Toplevel()
         edit_fram.grab_set()
         edit_fram.transient(self.master)
-        handsSet = finger.__init__(edit_fram, self.movement)
+        handsSet = finger.__init__(edit_fram, self.movement, motor, pub)
 
     def __init__(self, master):
         self.master = master
         self.master.geometry('480x720')
-        #self.master.title('RECORD SIGN')
         self.master.title('Hi Poppy ;)')
         self.label1 = Label(self.master, text='Hi Poppy', font="Helvetica 48 bold italic").pack(anchor=N)
         self.label2 = Label(self.master, justify=LEFT, text='To record new sing choose "Record new Sign" than select the actors, \n'
                                                             'or choose "Edit old Sign" and select the file to edit it.').pack(anchor=NW)
-
         self.Var = IntVar(master, value=1)
         self.option1 = Radiobutton(self.master, text="Record new Sign", variable = self.Var, value = 1, command=self.method)
         self.option1.pack(anchor=NW)
         self.option1.select()
         self.cb = dict()
         self.chkb = dict()
-        # with open('/home/odroid/catkin_ws/src/robot/recording/Poppy_torso.json', 'r') as f:
-        self.config = config.robot_config # json.load(f)
+        self.config = config.robot_config
         self.alias = self.config['motorgroups']
         self.lcb = ['Poppy']
-
         self.ndx = 0
         self.cb['Var_%02d' % self.ndx] = IntVar()
         self.chkb['Var_%02d' % self.ndx] = Checkbutton(master, text="_Poppy", variable=self.cb['Var_%02d' % self.ndx], command=self.child)
         self.chkb['Var_%02d' % self.ndx].pack(anchor=NW)
         space = "      |____ "
-        self.list = ['', '', ' abs_z, ', 'bust_y, ', 'bust_x, ', '', 'head_z, ', 'head_y, ', '', '', 'l_shoulder_y, ', 'l_shoulder_x, ', 'l_arm_z, ', 'l_elbow_y, ', 'l_forearm_z, ',
-                     '', 'r_shoulder_y, ', 'r_shoulder_x, ', 'r_arm_z, ', 'r_elbow_y. ', 'r_forearm_z']
-        #self.actors = [0, 0, 33, 34, 35, 0, 36, 37, 0, 0, 41, 42, 43, 44, 45, 0, 51, 52, 53, 54]
-        self.actors = ['', '', 'abs_z', 'bust_y', 'bust_x', '', 'head_z', 'head_y', '', '', 'l_shoulder_y', 'l_shoulder_x', 'l_arm_z', 'l_elbow_y', 'l_forearm_z',
-                     '', 'r_shoulder_y', 'r_shoulder_x', 'r_arm_z', 'r_elbow_y', 'r_forearm_z']
         for c_name, c_params in self.config['controllers'].items():
             self.motor_names = sum([self._motor_extractor(self.alias, name, space)
                                for name in c_params['attached_motors']], [])
         self.stat = [0] * len(self.cb)
-
-
 
         self.Next = Button(master, text="Next", width=10, command=self.nextCall)
         self.Next.pack(anchor=N)
@@ -223,31 +199,27 @@ class RECORDING_1():
 
     def STARTREC(self):
         self.STOP = 0
-        #if self.STP.get() == 1:
         self.sleeping = 1 / float(self.Frq.get())
-        for m in self.robot.Active_motors:
-            m.compliant = True
-        IDs = [m.id for m in self.robot.motors]
+        present_position = [motor[name].present_position for name in self.deadmotors]
+        IDs = [motor[name].id for name in self.motorsName]
         self.pos = {}
-        i = 0
+        tools.releas(self.motorsName, pub)
         for sec in range(int(self.StrTm.get())):
             self.info.config(text=str(sec))
             time.sleep(1)
         print 'Starting record'
-
+        i = 0
         start = default_timer()
         while self.STOP == 0:
-            #print default_timer()-start
-
-            self.pos[str(i)] = {'Robot': [m.present_position for m in self.robot.Active_motors], 'Right_hand': [212, 165, 213, 264, 138, 288, 288, 280, 238], 'Left_hand': [178, 214, 283, 253, 123, 103, 99, 102, 136]}
+            self.pos[str(i)] = {'Robot': [motor[name].present_position for name in self.motorsName], 'Right_hand': [200, 200, 100, 100, 200, 100, 100, 100, 100], 'Left_hand': [200, 200, 100, 100, 200, 100, 100, 100, 100]}
             i+=1
 
             time.sleep(self.sleeping)
             if self.STP.get() == 1 & (default_timer()-start > float(self.StpTm.get())):
                 self.STOP = 1
                 print 'Stop Recording'
-        self.frames = i
 
+        self.frames = i
         self.movement = {'actors_ID':IDs,
                        'actors_NAME':self.motorsName,
                        'freq': self.Frq.get(),
@@ -265,37 +237,18 @@ class RECORDING_1():
                          '<------ Click here to save the recording\n\n'
                          '<------ Click here to go to Hand Setting')
         self.info.config(justify=LEFT)
-#        with open("sign2.json", "w") as record:
-#            json.dump({'actors_ID':IDs,
-#                       'actors_NAME':self.motorsName,
-#                       'freq': 10,
-#                       'frame_number':self.frames,
-#                       'position':
-#                           self.pos
-#                       }, record)
+
 
     def STOPREC(self):
         self.STOP = 1
 
     def PLAY(self):
-        #print('Starting the Robot')
-        #self.robot = pypot.robot.from_config(pypot.robot.config.robot_config, True, True, False, activemotors=self.motorsName)
-        #print('Robot started')
-        for m in self.robot.motors:
-            m.compliant = False
-        #for m in self.robot.Dead_motors:
-        #    m.goal_position = 0
+
         print 'Playing'
-        for frame in range(self.frames):
-            id=0
-            for m in self.robot.Active_motors:
-                m.goal_position = self.movement['position'][str(frame)]['Robot'][id]
-                id += 1
-            time.sleep(self.sleeping)
-        #print 'Closing the robot'
-        for m in self.robot.Active_motors:
-            m.compliant = True
-        #self.robot.close()
+        present_position = [motor[name].present_position for name in self.motorsName]
+        goal_position = self.movement['position']['0']['Robot']
+        tools.go_to_pos(self.movement['actors_NAME'], present_position, goal_position, pub)
+        tools.do_seq(self.movement['actors_NAME'], self.movement['freq'], self.movement['position'], pub)
         print 'Done'
 
     def SAVE(self):
@@ -308,30 +261,23 @@ class RECORDING_1():
         print 'saved'
 
     def CLOSE(self):
-#        self.robot.close()
         print 'closing the robot'
-        for m in self.robot.motors:
-            m.compliant = True
-        self.robot.close()
+        present_position = [motor[name].present_position for name in self.motorsName]
+        goal_position = [0 for name in self.motorsName]
+        tools.go_to_pos(self.motorsName, present_position, goal_position, pub)
+        tools.releas(self.motorsName, pub)
         print 'Robot Closed'
         self.master.destroy()
 
     def Handset(self):
-        #print self.movement
-        #for m in self.robot.motors:
-         #   m.compliant = True
-        #self.robot.close()
         edit_fram = Toplevel()
         edit_fram.grab_set()
         edit_fram.transient(self.master)
-        handsSet = finger.__init__(edit_fram, self.movement, self.robot)
-        #lefthand = finger.__init__(self.movement)
-
-
+        handsSet = finger.__init__(edit_fram, self.movement, motor, pub)
 
     def __init__(self, master, motors):
         self.motorsName = motors
-        #print self.motorsName
+        self.deadmotors = [x for x in motor_names if x not in self.motorsName]
         self.master = master
         self.master.geometry('540x220')
         self.master.title('AUTO RECORDING')
@@ -347,20 +293,14 @@ class RECORDING_1():
         self.StpTm = StringVar(self.master, value='10')
         self.stopTime = Entry(self.master, width=10, textvariable=self.StpTm)
         self.stopTime.grid(row=2, column=2, sticky=W)
-        #self.stopTime.config(state=DISABLED)
         self.startRec = Button(self.master, text = 'Start Recording', width = 10, command = self.STARTREC)
         self.startRec.grid(row=5, column=1, sticky=NW)
-        #self.stopRec = Button(self.master, text='Stop Recording', width=10, command=self.STOPREC)
-        #self.stopRec.grid(row=5, column=2)
-        #self.stopRec.config(state=DISABLED)
         self.play = Button(self.master, text='Play', width=10, command=self.PLAY)
         self.play.grid(row=6, column=1, sticky=NW)
         self.play.config(state=DISABLED)
         self.save = Button(self.master, text='Save', width=10, command=self.SAVE)
         self.save.grid(row=7, column=1, sticky=NW)
         self.save.config(state=DISABLED)
-#        self.edit = Button(self.master, text='Edit', width=6, command=self.EDIT)
-#        self.edit.grid(row=5, column=5)
         self.varInfo = StringVar(self.master, value="<------ Click here to start recording \n\n\n\n"
                                                     "First you need to set the friquance of recording, \n"
                                                     "time to start and the recording time \n"
@@ -375,24 +315,33 @@ class RECORDING_1():
         self.handset.config(state=DISABLED)
         self.STOP = 0
 
-        print('starting the ROBOT')
-#        self.robot = config(config.robot_config, True, True, False,
-#                                 activemotors=self.motorsName)
-
-
-        self.robot = config.from_config(config.robot_config, True, True, False,
-                                             activemotors=self.motorsName)
-
-        IDs = [m.id for m in self.robot.motors]
-        self.pos = {}
-        i = 0
-
-        for m in self.robot.Dead_motors:
-            m.compliant = False
-        for m in self.robot.Dead_motors:
-            m.goal_position = 0
+        print('Starting the ROBOT')
+        present_position = [motor[name].present_position for name in self.deadmotors]
+        goal_position = [0 for name in self.deadmotors]
+        tools.go_to_pos(self.deadmotors, present_position, goal_position, pub)
+        tools.releas(self.motorsName, pub)
         print('Robot started')
 
+
+
+pub = dict()
+motor = dict()
+
+
+
+def get_motors(data):
+    motor[data.name] = data
+
+
+def start_topics(list):
+
+
+    for name in list:
+        pub[name] = rospy.Publisher('poppy/set/' + name, motorSet, queue_size=10)
+        rospy.Subscriber('poppy/get/' + name, motorStat, callback=get_motors)
+        motor[name]=motorStat
+    print 'WORD_LISTENER publishers & subscribers successful Initial'
+    rospy.spin()
 
 
 
@@ -402,7 +351,11 @@ def main():
     hi_poppy = REC(root)
     root.mainloop()
 
+motor_names = config.get_motor_list(config.robot_config)
 
 
 if __name__ == '__main__':
+    rospy.init_node('Recorder', anonymous=True)
+    thread.start_new_thread(start_topics, (motor_names,))
     main()
+

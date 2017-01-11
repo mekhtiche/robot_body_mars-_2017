@@ -5,17 +5,19 @@ import thread
 import time
 import rospy
 from robot_body.msg import motorStat
-from robot_body.msg import motorStatList
 from robot_body.msg import motorSet
 from std_msgs.msg import String
 import pypot.robot
+import robot_tools.robot_tools as tools
+
+
 print 'ROBOT succiful import'
 
-robot = pypot.robot.from_config(pypot.robot.config.robot_config, True, True, False, activemotors={})
-
+activemotors = {'abs_z', 'bust_y', 'bust_x'}
+robot = pypot.robot.from_config(pypot.robot.config.robot_config, True, True, False, activemotors=activemotors)
+err_max = 10
 
 pupStat = rospy.Publisher('Robot_status', String, queue_size=10)
-motorStatus = rospy.Publisher('All_motors', motorStatList, queue_size=10)
 
 pub = dict()
 
@@ -25,14 +27,30 @@ pub = dict()
 def Openning():
     print('Starting the ROBOT')
     try:
-        for m in robot.motors:
-            m.compliant = False
-        for m in robot.motors:
-            m.goal_position = 0
-        print('Robot started Successful')
+
+
+        present_position = [m.present_position for m in robot.Active_motors]
+        goal_position = [0 for m in robot.Active_motors]
+        max_err = max(map(abs,present_position))
+        if max_err > err_max:
+            preset = tools.build_seq(present_position, goal_position, int(max_err))
+            for frame in range(len(preset)):
+                id = 0
+                for m in robot.Active_motors:
+                    m.compliant = False
+                    m.goal_position = preset[str(frame)]['Robot'][id]
+                    id+=1
+                time.sleep(1/max_err)
+        else:
+            print 'robot in initial pos'
+            for m in robot.Active_motors:
+                m.compliant = False
+            for m in robot.motors:
+                m.goal_position = 0
+
         robot_status = 'Ready'
         pupStat.publish(robot_status)
-
+        print('Robot started Successful')
     except Exception, err:
         print 'Robot can not start, error is '
         print  err
@@ -40,9 +58,7 @@ def Openning():
         pupStat.publish(robot_status)
 
 
-
 def Closing():
-
     try:
         print 'Closing the robot'
         for m in robot.motors:
@@ -57,15 +73,13 @@ def Closing():
 
 def callback(data, m):
     m.compliant = data.compliant
-    m.direct = data.direct
     m.goal_position = data.goal_position
-    m.offset = data.offset
-    m.torque_limit = data.max_load
+
 
 def publisher():
     motor = motorStat()
     while not rospy.is_shutdown():
-        motors = motorStatList()
+
         for m in robot.motors:
             motor.id = m.id
             motor.name = m.name
@@ -84,17 +98,21 @@ def publisher():
             motor.offset = m.offset
             motor.max_load = m.torque_limit
             pub[m.name].publish(motor)
-            motors.motorList.append(motor)# = motors.motorList + [motor]
-        motorStatus.publish(motors)
-        time.sleep(0.1)
+            if (motor.present_temperature > 65):
+                robot_status = motor.name + ' is OVERHEATED, Present Tempirature is ' + str(motor.present_temperature)
+                pupStat.publish(robot_status)
+                print robot_status
+                Closing()
+                return
+        time.sleep(0.01)
 
 if __name__ == '__main__':
 
     rospy.init_node('robot_node', anonymous=True)
     Openning()
     for m in robot.motors:
-        pub[m.name] = rospy.Publisher('poppy/get/'+m.name, motorStat, queue_size=10)
-        rospy.Subscriber('poppy/set/'+m.name, motorSet, callback=callback, callback_args=m)
+        pub[m.name] = rospy.Publisher('poppy/get/'+ m.name, motorStat, queue_size=10)
+        rospy.Subscriber('poppy/set/'+ m.name, motorSet, callback=callback, callback_args=m)
     print 'ROBOT publishers & subscribers successful initial'
     thread.start_new_thread(publisher, ())
     rospy.spin()

@@ -29,6 +29,16 @@ from .controller import DummyController
 # This logger should always provides the config as extra
 logger = logging.getLogger(__name__)
 
+def get_motor_list(config):
+    alias = config['motorgroups']
+    controllers = []
+    for c_name, c_params in config['controllers'].items():
+        motor_names = sum([_motor_extractor(alias, name)
+                           for name in c_params['attached_motors']], [])
+    return motor_names
+
+
+
 
 def from_config(config, strict=True, sync=True, use_dummy_io=False, **extra):
     """ Returns a :class:`~pypot.robot.robot.Robot` instance created from a configuration dictionnary.
@@ -295,9 +305,9 @@ robot_config = {
     "upper_body_controller": {
       "sync_read": True,
       "attached_motors": [
-        #"torso",
+        "torso",
         "head",
-        #"arms"
+        "arms"
       ],
       "port": "auto"
     }
@@ -311,8 +321,8 @@ robot_config = {
       "r_shoulder_y",
       "r_shoulder_x",
       "r_arm_z",
-      "r_elbow_y"#,
-      #"r_forearm_z"
+      "r_elbow_y",
+      "r_forearm_z"
     ],
     "torso": [
       "abs_z",
@@ -323,8 +333,8 @@ robot_config = {
       "l_shoulder_y",
       "l_shoulder_x",
       "l_arm_z",
-      "l_elbow_y"#,
-      #"l_forearm_z"
+      "l_elbow_y",
+      "l_forearm_z"
     ],
     "arms": [
       "l_arm",

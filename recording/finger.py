@@ -4,48 +4,27 @@ import tkFileDialog
 import tkMessageBox
 import tkSimpleDialog
 from Tkinter import *
-# import robot.servo.Adafruit_PWM_Servo_Driver.PWM as PWM
-# from servo.Adafruit_PWM_Servo_Driver import PWM
-# import thread
 import rospy
-from robot_body.msg import servoSet
-from robot_body.msg import servoCmd
-import pypot
+from std_msgs.msg import Int16
+import robot_tools.robot_tools as tools
 import json
 import numpy as np
-import setNewHand
-# ===========================================================================
-# Example Code
-# ===========================================================================
-#DEBUG = 1
-#Lpwm = PWM(0x41, 4) # , debug = True  # for debuging the code and see what it send from the bus
-#Rpwm = PWM(0x40, 4) # 42
-#Lpwm.setPWMFreq(30)
-#Rpwm.setPWMFreq(30)
-#global srl
-#srl = serial.Serial('/dev/ttyACM1', 19200)
-#time.sleep(3)
-global RservoPub, LservoPub, rservoPub, lservoPub
-
-RservoPub = rospy.Publisher('servo/Rcmd', servoSet, queue_size=10)
-LservoPub = rospy.Publisher('servo/Lcmd', servoSet, queue_size=10)
-rservoPub = rospy.Publisher('servo/rcmd', servoCmd, queue_size=10)
-lservoPub = rospy.Publisher('servo/lcmd', servoCmd, queue_size=10)
-Rcmd = servoSet()
-Lcmd = servoSet()
-cmd  = servoCmd()
 
 
 
 
+R = dict()
+L = dict()
 
-def __init__(master, movement, robot = None ):
+for servo in range(1, 10):
+    R[servo] = rospy.Publisher('servo/R' + str(servo), Int16, queue_size=10)
+    L[servo] = rospy.Publisher('servo/L' + str(servo), Int16, queue_size=10)
 
-    # Set frequency to 60 Hz
-#    master = Tk()
+
+
+def __init__(master, movement, motor, pub):
     master.geometry('915x855')
     master.title('SETTING THE HAND')
-    rospy.init_node('Fingers_set', anonymous=True)
     title = Frame(master)
     title.grid(row=0, column=0, columnspan=3, sticky=W+E+N+S)
     info = Label(title, justify=LEFT, text='play the recorded sign using the slider in the blue section and set the hand configuration using \n'
@@ -63,263 +42,186 @@ def __init__(master, movement, robot = None ):
     buttfram.grid(row=2, column=0, columnspan=3, sticky=W+E+N+S)
     master.closing = False
     master.movement = movement
-    motorsName = movement['actors_NAME']
-    if robot is None:
-        master.closing = True
-        print 'loading robot'
-        master.robot = pypot.robot.from_config(pypot.robot.config.robot_config, True, True, False,
-                                               activemotors=motorsName)
-        print 'robot loaded succefful'
-    else:
-        master.robot = robot
+    active_motors = master.movement['actors_NAME']
+    dead_motors = [name for name in motor if name not in active_motors]
+    print('Starting the ROBOT')
+    tools.go_to_pos(active_motors, [motor[name].present_position for name in active_motors],
+                    master.movement['position']['0']['Robot'], pub)
 
-    for m in master.robot.motors:
-        m.compliant = False
-    for m in master.robot.Dead_motors:
-        m.goal_position = 0
+    tools.go_to_pos(dead_motors, [motor[name].present_position for name in dead_motors],
+                    [0], pub)
+    print('Robot started')
 
-    with open('/home/odroid/catkin_ws/src/robot_body/recording/Poppy_torso.json', 'r') as f:
-        config = json.load(f)
-    Rcfg = config['Right_Setting']
-    Lcfg = config['Left_Setting']
 
 
 #//////////////////////////////////////////////////////////////////////////LEFT  ARM////////////////////////////////////////////////////////////////////////
     def LgetValue1(event):
-            #print(master.Lwrist_V.get())
-            cmd.motor = 1
-            cmd.command = master.Lwrist_V.get()
-            lservoPub.publish(cmd)
+        tools.left_servo_set(1, master.Lwrist_V.get(), L)
 
-    master.Lwrist_V = Scale(lefthand, label = "wrist_V N:1", from_=Lcfg['1'][0], to =Lcfg['1'][1], orient = HORIZONTAL, length = 300, command = LgetValue1)
+    master.Lwrist_V = Scale(lefthand, label = "wrist_V N:1", from_=100, to =300, orient = HORIZONTAL, length = 300, command = LgetValue1)
     master.Lwrist_V.set(200)
     master.Lwrist_V.pack()
 
     def LgetValue2(event):
-            #print(master.Lwrist_H.get())
-            cmd.motor = 2
-            cmd.command = master.Lwrist_H.get()
-            lservoPub.publish(cmd)
+        tools.left_servo_set(2, master.Lwrist_H.get(), L)
 
-    master.Lwrist_H = Scale(lefthand, label = "wrist_H N:2", from_=Lcfg['2'][0], to =Lcfg['2'][1], orient = HORIZONTAL, length = 300, command = LgetValue2)
+    master.Lwrist_H = Scale(lefthand, label = "wrist_H N:2", from_=100, to =300, orient = HORIZONTAL, length = 300, command = LgetValue2)
     master.Lwrist_H.set(200)
     master.Lwrist_H.pack()
 
     def LgetValue3(event):
-            #print(master.Lthump_J.get())
-            cmd.motor = 3
-            cmd.command = master.Lthump_J.get()
-            lservoPub.publish(cmd)
+        tools.left_servo_set(3, master.Lthump_J.get(), L)
 
-    master.Lthump_J = Scale(lefthand, label = "Thump_J N:3", from_=Lcfg['3'][0], to =Lcfg['3'][1], orient = HORIZONTAL, length = 300, command = LgetValue3)
-    master.Lthump_J.set(202)
+    master.Lthump_J = Scale(lefthand, label = "Thump_J N:3", from_=100, to =300, orient = HORIZONTAL, length = 300, command = LgetValue3)
+    master.Lthump_J.set(100)
     master.Lthump_J.pack()
 
     def LgetValue4(event):
-            #print(master.Lthump.get())
-            cmd.motor = 4
-            cmd.command = master.Lthump.get()
-            lservoPub.publish(cmd)
+        tools.left_servo_set(4, master.Lthump.get(), L)
 
-    master.Lthump = Scale(lefthand, label = "Thump N:4", from_=Lcfg['4'][0], to =Lcfg['4'][1], orient = HORIZONTAL, length = 300, command = LgetValue4)
-    master.Lthump.set(280)
+    master.Lthump = Scale(lefthand, label = "Thump N:4", from_=100, to =300, orient = HORIZONTAL, length = 300, command = LgetValue4)
+    master.Lthump.set(100)
     master.Lthump.pack()
 
     def LgetValue5(event):
-            #print(master.LOpen.get())
-            cmd.motor = 5
-            cmd.command = master.LOpen.get()
-            lservoPub.publish(cmd)
+        tools.left_servo_set(5, master.LOpen.get(), L)
 
-    master.LOpen = Scale(lefthand, label = "Open N:5", from_=Lcfg['5'][0], to =Lcfg['5'][1], orient = HORIZONTAL, length = 300, command = LgetValue5)
-    master.LOpen.set(233)
+    master.LOpen = Scale(lefthand, label = "Open N:5", from_=100, to =300, orient = HORIZONTAL, length = 300, command = LgetValue5)
+    master.LOpen.set(200)
     master.LOpen.pack()
 
     def LgetValue6(event):
-            #print(master.Lindex.get())
-            cmd.motor = 6
-            cmd.command = master.Lindex.get()
-            lservoPub.publish(cmd)
+        tools.left_servo_set(6, master.Lindex.get(), L)
 
-    master.Lindex = Scale(lefthand, label = "Index N:6", from_=Lcfg['6'][0], to =Lcfg['6'][1], orient = HORIZONTAL, length = 300, command = LgetValue6)
-    master.Lindex.set(270)
+    master.Lindex = Scale(lefthand, label = "Index N:6", from_=100, to =300, orient = HORIZONTAL, length = 300, command = LgetValue6)
+    master.Lindex.set(100)
     master.Lindex.pack()
 
     def LgetValue7(event):
-            #print(master.Lmajor.get())
-            cmd.motor = 7
-            cmd.command = master.Lmajor.get()
-            lservoPub.publish(cmd)
+        tools.left_servo_set(7, master.Lmajor.get(), L)
 
-    master.Lmajor = Scale(lefthand, label = "Major N:7", from_=Lcfg['7'][0], to =Lcfg['7'][1], orient = HORIZONTAL, length = 300, command = LgetValue7)
-    master.Lmajor.set(115)
+    master.Lmajor = Scale(lefthand, label = "Major N:7", from_=100, to =300, orient = HORIZONTAL, length = 300, command = LgetValue7)
+    master.Lmajor.set(100)
     master.Lmajor.pack()
 
     def LgetValue8(event):
-            #print(master.Lring.get())
-            cmd.motor = 8
-            cmd.command = master.Lring.get()
-            lservoPub.publish(cmd)
+        tools.left_servo_set(8, master.Lring.get(), L)
 
-    master.Lring = Scale(lefthand, label = "Ring N:8", from_=Lcfg['8'][0], to =Lcfg['8'][1], orient = HORIZONTAL, length = 300, command = LgetValue8)
-    master.Lring.set(110)
+    master.Lring = Scale(lefthand, label = "Ring N:8", from_=100, to =300, orient = HORIZONTAL, length = 300, command = LgetValue8)
+    master.Lring.set(100)
     master.Lring.pack()
 
     def LgetValue9(event):
-            #print(master.Lauri.get())
-            cmd.motor = 9
-            cmd.command = master.Lauri.get()
-            lservoPub.publish(cmd)
+        tools.left_servo_set(9, master.Lauri.get(), L)
 
-    master.Lauri = Scale(lefthand, label = "Auriculaire N:9", from_=Lcfg['9'][0], to =Lcfg['9'][1], orient = HORIZONTAL, length = 300, command = LgetValue9)
-    master.Lauri.set(110)
+    master.Lauri = Scale(lefthand, label = "Auriculaire N:9", from_=100, to =300, orient = HORIZONTAL, length = 300, command = LgetValue9)
+    master.Lauri.set(100)
     master.Lauri.pack()
 #//////////////////////////////////////////////////////////////////////////LEFT  ARM////////////////////////////////////////////////////////////////////////
 
 
 #//////////////////////////////////////////////////////////////////////////RIGHT ARM////////////////////////////////////////////////////////////////////////
     def RgetValue1(event):
-        # print(master.Rwrist_V.get())
-        cmd.motor = 1
-        cmd.command = master.Rwrist_V.get()
-        rservoPub.publish(cmd)
+        tools.right_servo_set(1, master.Rwrist_V.get(), R)
 
 
-    master.Rwrist_V = Scale(righthand, label="wrist_V N:1", from_=Rcfg['1'][0], to=Rcfg['1'][1], orient=HORIZONTAL, length=300,
+    master.Rwrist_V = Scale(righthand, label="wrist_V N:1", from_=100, to =300, orient=HORIZONTAL, length=300,
                             command=RgetValue1)
     master.Rwrist_V.set(200)
     master.Rwrist_V.pack()
 
 
     def RgetValue2(event):
-        # print(master.Rwrist_H.get())
-        cmd.motor = 2
-        cmd.command = master.Rwrist_H.get()
-        rservoPub.publish(cmd)
+        tools.right_servo_set(2, master.Rwrist_H.get(), R)
 
 
-    master.Rwrist_H = Scale(righthand, label="wrist_H N:2", from_=Rcfg['2'][0], to=Rcfg['2'][1], orient=HORIZONTAL, length=300,
+    master.Rwrist_H = Scale(righthand, label="wrist_H N:2", from_=100, to =300, orient=HORIZONTAL, length=300,
                             command=RgetValue2)
     master.Rwrist_H.set(200)
     master.Rwrist_H.pack()
 
 
     def RgetValue3(event):
-        # print(master.Rthump_J.get())
-        cmd.motor = 3
-        cmd.command = master.Rthump_J.get()
-        rservoPub.publish(cmd)
+        tools.right_servo_set(3, master.Rthump_J.get(), R)
 
 
-    master.Rthump_J = Scale(righthand, label="Thump_J N:3", from_=Rcfg['3'][0], to=Rcfg['3'][1], orient=HORIZONTAL, length=300,
+    master.Rthump_J = Scale(righthand, label="Thump_J N:3", from_=100, to =300, orient=HORIZONTAL, length=300,
                             command=RgetValue3)
-    master.Rthump_J.set(202)
+    master.Rthump_J.set(100)
     master.Rthump_J.pack()
 
 
     def RgetValue4(event):
-        # print(master.Rthump.get())
-        cmd.motor = 4
-        cmd.command = master.Rthump.get()
-        rservoPub.publish(cmd)
+        tools.right_servo_set(4, master.Rthump.get(), R)
 
 
-    master.Rthump = Scale(righthand, label="Thump N:4", from_=Rcfg['4'][0], to=Rcfg['4'][1], orient=HORIZONTAL, length=300, command=RgetValue4)
-    master.Rthump.set(280)
+    master.Rthump = Scale(righthand, label="Thump N:4", from_=100, to =300, orient=HORIZONTAL, length=300, command=RgetValue4)
+    master.Rthump.set(100)
     master.Rthump.pack()
 
 
     def RgetValue5(event):
-        # print(master.ROpen.get())
-        cmd.motor = 5
-        cmd.command = master.ROpen.get()
-        rservoPub.publish(cmd)
+        tools.right_servo_set(5, master.ROpen.get(), R)
 
 
-    master.ROpen = Scale(righthand, label="Open N:5", from_=Rcfg['5'][0], to=Rcfg['5'][1], orient=HORIZONTAL, length=300, command=RgetValue5)
-    master.ROpen.set(233)
+    master.ROpen = Scale(righthand, label="Open N:5", from_=100, to =300, orient=HORIZONTAL, length=300, command=RgetValue5)
+    master.ROpen.set(200)
     master.ROpen.pack()
 
 
     def RgetValue6(event):
-        # print(master.Rindex.get())
-        cmd.motor = 6
-        cmd.command = master.Rindex.get()
-        rservoPub.publish(cmd)
+        tools.right_servo_set(6, master.Rindex.get(), R)
 
 
-    master.Rindex = Scale(righthand, label="Index N:6", from_=Rcfg['6'][0], to=Rcfg['6'][1], orient=HORIZONTAL, length=300, command=RgetValue6)
-    master.Rindex.set(270)
+    master.Rindex = Scale(righthand, label="Index N:6", from_=100, to =300, orient=HORIZONTAL, length=300, command=RgetValue6)
+    master.Rindex.set(100)
     master.Rindex.pack()
 
 
     def RgetValue7(event):
-        # print(master.Rmajor.get())
-        cmd.motor = 7
-        cmd.command = master.Rmajor.get()
-        rservoPub.publish(cmd)
+        tools.right_servo_set(7, master.Rmajor.get(), R)
 
 
-    master.Rmajor = Scale(righthand, label="Major N:7", from_=Rcfg['7'][0], to=Rcfg['7'][1], orient=HORIZONTAL, length=300, command=RgetValue7)
-    master.Rmajor.set(115)
+    master.Rmajor = Scale(righthand, label="Major N:7", from_=100, to =300, orient=HORIZONTAL, length=300, command=RgetValue7)
+    master.Rmajor.set(100)
     master.Rmajor.pack()
 
 
     def RgetValue8(event):
-        # print(master.Rring.get())
-        cmd.motor = 8
-        cmd.command = master.Rring.get()
-        rservoPub.publish(cmd)
+        tools.right_servo_set(8, master.Rring.get(), R)
 
 
-    master.Rring = Scale(righthand, label="Ring N:8", from_=Rcfg['8'][0], to=Rcfg['8'][1], orient=HORIZONTAL, length=300, command=RgetValue8)
-    master.Rring.set(110)
+    master.Rring = Scale(righthand, label="Ring N:8", from_=100, to =300, orient=HORIZONTAL, length=300, command=RgetValue8)
+    master.Rring.set(100)
     master.Rring.pack()
 
 
     def RgetValue9(event):
-        # print(master.Rauri.get())
-        cmd.motor = 9
-        cmd.command = master.Rauri.get()
-        rservoPub.publish(cmd)
+        tools.right_servo_set(9, master.Rauri.get(), R)
 
 
-    master.Rauri = Scale(righthand, label="Auriculaire N:9", from_=Rcfg['9'][0], to=Rcfg['9'][1], orient=HORIZONTAL, length=300,
-                         command=RgetValue9)
-    master.Rauri.set(110)
+    master.Rauri = Scale(righthand, label="Auri N:9", from_=100, to =300, orient=HORIZONTAL, length=300, command=RgetValue9)
+    master.Rauri.set(100)
     master.Rauri.pack()
 #//////////////////////////////////////////////////////////////////////////RIGHT ARM////////////////////////////////////////////////////////////////////////
-
-    def callback(Lcommand=None, Rcommand=None):
-
-        if Lcommand is not None:
-            Lcmd = Lcommand
-            LservoPub.publish(Lcmd)
-        if Rcommand is not None:
-            Rcmd = Rcommand
-            RservoPub.publish(Rcmd)
 
 
     def setframe(event):
         master.frm = master.recSlider.get()
-        id = 0
-        for m in master.robot.Active_motors:
-            m.goal_position = master.movement['position'][str(master.frm)]['Robot'][id]
-            id += 1
+
+        tools.do_seq(active_motors, 100, {'0':master.movement['position'][str(master.frm)]}, pub)
+
         if master.Lrec.get() == 0:
-            callback(master.movement['position'][str(master.frm)]['Left_hand'], None)
+            tools.multi_servo_set(master.movement['position'][str(master.frm)]['Left_hand'], None, L)
 
         if master.Rrec.get() == 0:
-            callback(None, master.movement['position'][str(master.frm)]['Right_hand'])
+            tools.multi_servo_set(None, master.movement['position'][str(master.frm)]['Right_hand'], None, R)
 
 
     def DelBefor():
 
         if tkMessageBox.askyesno(title='Warning', message='Warning: Do you want to delete the sequanses Befor the the frame ' + str(master.frm) + '?'):
             mov = {} #master.movement['position']
-
-
-
 
             newfrm=0
             for frm in range(master.frm, master.movement['frame_number'], 1):
@@ -344,20 +246,32 @@ def __init__(master, movement, robot = None ):
             save.config(state=NORMAL)
 
     def closecall():
-        callback([0]*9, [0]*9)
+        decision = tkMessageBox.askyesnocancel('CLOSE', "Do you want to save sign: ")
+        if decision:
+            print 'saving movement'
+            saveFile = tkFileDialog.asksaveasfilename()
+            if not saveFile:
+                return None
+            with open(saveFile, "w") as record:
+                json.dump(master.movement, record)
+            print 'saved'
+        elif decision is None:
+            return
+        print 'closing the robot'
+        tools.multi_servo_set([200, 200, 100, 100, 200, 100, 100, 100, 100], [200, 200, 100, 100, 200, 100, 100, 100, 100], L, R)
+        present_position = [motor[name].present_position for name in dead_motors]
+        goal_position = [0 for name in dead_motors]
+        tools.go_to_pos(dead_motors, present_position, goal_position, pub)
 
-        if master.closing:
-            for m in master.robot.motors:
-                m.compliant = True
-            master.robot.close()
-	else:
-	    for m in master.robot.Active_motors:
-                m.compliant = True
+        present_position = [motor[name].present_position for name in active_motors]
+        goal_position = [0 for name in active_motors]
+        tools.go_to_pos(active_motors, present_position, goal_position, pub)
+        tools.releas(active_motors, pub, L, R)
+        print 'Robot Closed'
 
         master.destroy()
 
     def savecall():
-
         print 'saving movement'
         saveFile = tkFileDialog.asksaveasfilename()
         if not saveFile:
@@ -424,34 +338,20 @@ def __init__(master, movement, robot = None ):
             master.needToBuild = False
             save.config(state=NORMAL)
 
-        for m in master.robot.motors:
-            m.compliant = False
-
         time.sleep(0.5)
         print 'Playing'
         for frame in range(master.frm, master.movement['frame_number']):
-            id = 0
-            for m in master.robot.Active_motors:
-                m.goal_position = master.movement['position'][str(frame)]['Robot'][id]
-                id += 1
-            callback(master.movement['position'][str(frame)]['Left_hand'], master.movement['position'][str(frame)]['Right_hand'])
+
+            tools.do_seq(active_motors, 100, {'0': master.movement['position'][str(frame)]}, pub)
+
+            tools.multi_servo_set(master.movement['position'][str(frame)]['Left_hand'], master.movement['position'][str(frame)]['Right_hand'], L, R)
             time.sleep(1/float(master.movement['freq']))
         master.recSlider.set(frame)
         print 'Done'
 
     def clearcall():
-
         master.setted_frame = []
-
         master.needToBuild = False
-
-
-
-
-
-
-
-
 
     def setauto():
         master.smooth.config(state=NORMAL) if master.autoSmth.get() == 0 else master.smooth.config(state=DISABLED)
@@ -466,7 +366,7 @@ def __init__(master, movement, robot = None ):
         else:
             print "you Should enter the mane of the hand set"
 
-        with open("/home/odroid/catkin_ws/src/robot/recording/handSetting.json", "w") as h:
+        with open("/home/odroid/catkin_ws/src/robot_body/recording/handSetting.json", "w") as h:
             json.dump(handSetting, h)
 
     def saveR():
@@ -483,12 +383,10 @@ def __init__(master, movement, robot = None ):
             json.dump(handSetting, h)
 
     def Lrel():
-        callback([50] * 9, None)
-        # srl.write(struct.pack('cBBBBBBBBB', "L", 50, 50, 50, 50, 50, 50, 50, 50, 50))
+        tools.multi_servo_set([50] * 9, None, L)
 
     def Rrel():
-        callback(None, [50] * 9)
-        # srl.write(struct.pack('cBBBBBBBBB', "R", 50, 50, 50, 50, 50, 50, 50, 50, 50))
+        tools.multi_servo_set(None, [50] * 9, None, R)
 
     close = Button(buttfram, text='Close', width=10, command=closecall)
     close.grid(row=6, column=4, sticky=E)
@@ -532,7 +430,7 @@ def __init__(master, movement, robot = None ):
     def setleft():
         if list(L_handSets.curselection()):
             left_values = handSetting["Left"][L_handSets.get(L_handSets.curselection())]
-            callback(left_values)
+            tools.multi_servo_set(left_values, None, L)
             master.Lwrist_V.set(left_values[0])
             master.Lwrist_H.set(left_values[1])
             master.Lthump_J.set(left_values[2])
@@ -548,7 +446,7 @@ def __init__(master, movement, robot = None ):
     def setright():
         if list(R_handSets.curselection()):
             right_values = handSetting["Right"][R_handSets.get(R_handSets.curselection())]
-            callback(None, right_values)
+            tools.multi_servo_set(None, right_values, None, R)
             master.Rwrist_V.set(right_values[0])
             master.Rwrist_H.set(right_values[1])
             master.Rthump_J.set(right_values[2])
@@ -561,38 +459,6 @@ def __init__(master, movement, robot = None ):
         else:
             print "No setting is selected"
 
-    def setNhand():
-        setupFrame = Toplevel()
-        setupFrame.grab_set()
-        setupFrame.transient(master)
-        setuphands = setNewHand.__init__(setupFrame, rservoPub, lservoPub)
-
-
-    def refresh():
-
-        with open('/home/odroid/catkin_ws/src/robot/recording/Poppy_torso.json', 'r') as f:
-            config = json.load(f)
-        Rcfg = config['Right_Setting']
-        Lcfg = config['Left_Setting']
-        master.Lwrist_V.config(from_=Lcfg['1'][0], to=Lcfg['1'][1])
-        master.Lwrist_H.config(from_=Lcfg['2'][0], to=Lcfg['2'][1])
-        master.Lthump_J.config(from_=Lcfg['3'][0], to=Lcfg['3'][1])
-        master.Lthump.config(from_=Lcfg['4'][0], to=Lcfg['4'][1])
-        master.LOpen.config(from_=Lcfg['5'][0], to=Lcfg['5'][1])
-        master.Lindex.config(from_=Lcfg['6'][0], to=Lcfg['6'][1])
-        master.Lmajor.config(from_=Lcfg['7'][0], to=Lcfg['7'][1])
-        master.Lring.config(from_=Lcfg['8'][0], to=Lcfg['8'][1])
-        master.Lauri.config(from_=Lcfg['9'][0], to=Lcfg['9'][1])
-
-        master.Rwrist_V.config(from_=Rcfg['1'][0], to=Rcfg['1'][1])
-        master.Rwrist_H.config(from_=Rcfg['2'][0], to=Rcfg['2'][1])
-        master.Rthump_J.config(from_=Rcfg['3'][0], to=Rcfg['3'][1])
-        master.Rthump.config(from_=Rcfg['4'][0], to=Rcfg['4'][1])
-        master.ROpen.config(from_=Rcfg['5'][0], to=Rcfg['5'][1])
-        master.Rindex.config(from_=Rcfg['6'][0], to=Rcfg['6'][1])
-        master.Rmajor.config(from_=Rcfg['7'][0], to=Rcfg['7'][1])
-        master.Rring.config(from_=Rcfg['8'][0], to=Rcfg['8'][1])
-        master.Rauri.config(from_=Rcfg['9'][0], to=Rcfg['9'][1])
 
     def L_DEL():
 
@@ -602,7 +468,7 @@ def __init__(master, movement, robot = None ):
                     handSetting = json.load(f)
                 del handSetting["Left"][L_handSets.get(L_handSets.curselection())]
                 L_handSets.delete(L_handSets.curselection())
-                with open("/home/odroid/catkin_ws/src/robot/recording/handSetting.json", "w") as f:
+                with open("/home/odroid/catkin_ws/src/robot_body/recording/handSetting.json", "w") as f:
                     json.dump(handSetting, f)
         else:
             print "No setting is selected"
@@ -622,18 +488,6 @@ def __init__(master, movement, robot = None ):
             print "No setting is selected"
 
 
-
-
-
-
-
-    NewHandSetupFrame = Frame(medButt, bg="blue")
-    NewHandSetupFrame.grid(row=0, column=0, columnspan=4, sticky=W + E + N + S)
-
-    NewHandSetup = Button(NewHandSetupFrame,text = "Setup New Hand/s", width=13, command=setNhand)
-    NewHandSetup.grid(row=0, column=0)
-    Refresh = Button(NewHandSetupFrame, text = "Refresh", width = 13, command = refresh)
-    Refresh.grid(row=0, column=2)
 
     leftSet = Button(medButt, text="<<", width=5, command=setleft)
     leftSet.grid(row=3, column=0, sticky=E)
@@ -680,19 +534,7 @@ def __init__(master, movement, robot = None ):
     master.setted_frame = []
 
 
-    actors = ['abs_z', 'bust_y', 'bust_x', 'head_z', 'head_y', 'l_shoulder_y', 'l_shoulder_x', 'l_arm_z', 'l_elbow_y', 'l_forearm_z', 'r_shoulder_y', 'r_shoulder_x', 'r_arm_z', 'r_elbow_y']
-    #print actors
 
 
 
-    id = 0
-    for m in master.robot.Active_motors:
-        m.goal_position = master.movement['position'][str(master.frm)]['Robot'][id]
-        id += 1
-    #callback(master.movement['position'][str(master.frm)]['Left_hand'], master.movement['position'][str(master.frm)]['Right_hand'])
-
-
-
-
-#mainloop()
 
