@@ -49,7 +49,7 @@ def __init__(master, movement, motor, pub):
                     master.movement['position']['0']['Robot'], pub)
 
     tools.go_to_pos(dead_motors, [motor[name].present_position for name in dead_motors],
-                    [0], pub)
+                    [0 for name in dead_motors], pub)
     print('Robot started')
 
 
@@ -246,17 +246,12 @@ def __init__(master, movement, motor, pub):
             save.config(state=NORMAL)
 
     def closecall():
-        decision = tkMessageBox.askyesnocancel('CLOSE', "Do you want to save sign: ")
-        if decision:
-            print 'saving movement'
-            saveFile = tkFileDialog.asksaveasfilename()
-            if not saveFile:
-                return None
-            with open(saveFile, "w") as record:
-                json.dump(master.movement, record)
-            print 'saved'
-        elif decision is None:
-            return
+        if save['state']==NORMAL:
+            decision = tkMessageBox.askyesnocancel('CLOSE', "Do you want to save sign: ")
+            if decision:
+                savecall()
+            elif decision is None:
+                return
         print 'closing the robot'
         tools.multi_servo_set([200, 200, 100, 100, 200, 100, 100, 100, 100], [200, 200, 100, 100, 200, 100, 100, 100, 100], L, R)
         present_position = [motor[name].present_position for name in dead_motors]
@@ -273,7 +268,7 @@ def __init__(master, movement, motor, pub):
 
     def savecall():
         print 'saving movement'
-        saveFile = tkFileDialog.asksaveasfilename()
+        saveFile = tkFileDialog.asksaveasfilename(defaultextension="json", initialdir="/home/odroid/catkin_ws/src/robot_body/recording/data_base")
         if not saveFile:
             return None
         with open(saveFile, "w") as record:

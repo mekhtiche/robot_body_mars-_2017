@@ -139,7 +139,7 @@ class REC():
             self.loadFile.config(state=NORMAL)
 
     def editSign(self):
-        recFile = tkFileDialog.askopenfilename()
+        recFile = tkFileDialog.askopenfilename(initialdir="/home/odroid/catkin_ws/src/robot_body/recording/data_base")
         if not recFile:
             return None
         print 'Openning the file: ' + recFile
