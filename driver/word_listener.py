@@ -45,38 +45,41 @@ def do_sign(buffer):
     left_hand  = [200, 200, 100, 100, 200, 100, 100, 100, 100]
     while True:
         if buffer:
-            SIGN = buffer.pop(0)
-            print 'Doing sign: ' + SIGN
-            with open("/home/odroid/catkin_ws/src/robot_body/recording/data_base/" + SIGN + ".json", "r") as sign:
-                movement = json.load(sign)
-                names = movement["actors_NAME"]
-                frames = movement["frame_number"]
-                freq = float(movement["freq"])
-                sign = movement["position"]
-                id = 0
-                max_err = 0
-                for name in names:
-                    max_err = max([abs(sign['0']['Robot'][id]-present_pos[name]), max_err])
-                    id +=1
-            if max_err > err_max:
-                present_position = {'Robot': [present_pos[name] for name in names], 'Right_hand': right_hand, 'Left_hand': left_hand}
-                goal_position = sign['0']
-                pre_sign = tools.build_seq(present_position, goal_position, int(max_err))
-                tools.do_seq(names, max_err, pre_sign, pub, L, R)
-            tools.do_seq(names, freq, sign, pub, L, R)
-            right_hand = sign[str(frames - 1)]["Right_hand"]
-            left_hand  = sign[str(frames - 1)]["Left_hand"]
-            if not buffer:
-                present_position = {'Robot': [present_pos[name] for name in names], 'Right_hand': right_hand, 'Left_hand': left_hand}
-                right_hand = [200, 200, 100, 100, 200, 100, 100, 100, 100]
-                left_hand = [200, 200, 100, 100, 200, 100, 100, 100, 100]
-                goal_position = {'Robot': [0 for name in names], 'Right_hand': right_hand, 'Left_hand': left_hand}
-                max_err = max(map(abs, present_position["Robot"]))
+            try:
+                SIGN = buffer.pop(0)
+                print 'Doing sign: ' + SIGN
+                with open("/home/odroid/catkin_ws/src/robot_body/recording/data_base/" + SIGN + ".json", "r") as sign:
+                    movement = json.load(sign)
+                    names = movement["actors_NAME"]
+                    frames = movement["frame_number"]
+                    freq = float(movement["freq"])
+                    sign = movement["position"]
+                    id = 0
+                    max_err = 0
+                    for name in names:
+                        max_err = max([abs(sign['0']['Robot'][id]-present_pos[name]), max_err])
+                        id +=1
                 if max_err > err_max:
-                    post_sign = tools.build_seq(present_position, goal_position, int(max_err))
-                    tools.do_seq(names, max_err, post_sign, pub, L, R)
-                tools.releas(names, pub, L, R)
-
+                    present_position = {'Robot': [present_pos[name] for name in names], 'Right_hand': right_hand, 'Left_hand': left_hand}
+                    goal_position = sign['0']
+                    pre_sign = tools.build_seq(present_position, goal_position, int(max_err))
+                    tools.do_seq(names, max_err, pre_sign, pub, L, R)
+                tools.do_seq(names, freq, sign, pub, L, R)
+                right_hand = sign[str(frames - 1)]["Right_hand"]
+                left_hand  = sign[str(frames - 1)]["Left_hand"]
+                if not buffer:
+                    present_position = {'Robot': [present_pos[name] for name in names], 'Right_hand': right_hand, 'Left_hand': left_hand}
+                    right_hand = [200, 200, 100, 100, 200, 100, 100, 100, 100]
+                    left_hand = [200, 200, 100, 100, 200, 100, 100, 100, 100]
+                    goal_position = {'Robot': [0 for name in names], 'Right_hand': right_hand, 'Left_hand': left_hand}
+                    max_err = max(map(abs, present_position["Robot"]))
+                    if max_err > err_max:
+                        post_sign = tools.build_seq(present_position, goal_position, int(max_err))
+                        tools.do_seq(names, max_err, post_sign, pub, L, R)
+                    tools.releas(names, pub, L, R)
+            except Exception, err:
+                print 'Robot can not start, error is '
+                print  err
 
 
 

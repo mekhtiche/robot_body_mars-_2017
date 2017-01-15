@@ -21,7 +21,7 @@ def send_word_s():
 
 rospy.init_node('WORD_PUBLISHER', anonymous=True)
 master = Tk()
-master.geometry('480x320')
+master.geometry('240x50')
 master.title('SEND WORDS')
 text = StringVar()
 Input = Entry(master, width=20, textvariable=text)
