@@ -45,11 +45,19 @@ def __init__(master, movement, motor, pub):
     active_motors = master.movement['actors_NAME']
     dead_motors = [name for name in motor if name not in active_motors]
     print('Starting the ROBOT')
-    tools.go_to_pos(active_motors, [motor[name].present_position for name in active_motors],
-                    master.movement['position']['0']['Robot'], pub)
+    present_position = {"Robot": [motor[name].present_position for name in active_motors],
+                        "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                        "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+    goal_position = master.movement['position']['0']
+    tools.go_to_pos(active_motors, present_position, goal_position, pub)
 
-    tools.go_to_pos(dead_motors, [motor[name].present_position for name in dead_motors],
-                    [0 for name in dead_motors], pub)
+    present_position = {"Robot": [motor[name].present_position for name in dead_motors],
+                        "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                        "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+    goal_position = {"Robot": [0 for name in dead_motors],
+                     "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                     "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+    tools.go_to_pos(dead_motors, present_position, goal_position, pub)
     print('Robot started')
 
 
@@ -220,7 +228,7 @@ def __init__(master, movement, motor, pub):
 
     def DelBefor():
 
-        if tkMessageBox.askyesno(title='Warning', message='Warning: Do you want to delete the sequanses Befor the the frame ' + str(master.frm) + '?'):
+        if tkMessageBox.askyesno(title='Warning', message='Warning: Do you want to delete the sequanses Befor the the frame ' + str(master.frm) + '?', parent=master):
             mov = {} #master.movement['position']
 
             newfrm=0
@@ -237,7 +245,7 @@ def __init__(master, movement, motor, pub):
 
     def DelAfter():
 
-        if tkMessageBox.askyesno(title='Warning', message='Warning: Do you want to delete the sequanses After the the frame '+ str(master.frm) + '?'):
+        if tkMessageBox.askyesno(title='Warning', message='Warning: Do you want to delete the sequanses After the the frame '+ str(master.frm) + '?', parent=master):
             for frm in range(master.frm, master.movement['frame_number'], 1):
                 master.movement['position'].pop(str(frm))
 
@@ -247,19 +255,27 @@ def __init__(master, movement, motor, pub):
 
     def closecall():
         if save['state']==NORMAL:
-            decision = tkMessageBox.askyesnocancel('CLOSE', "Do you want to save sign: ")
+            decision = tkMessageBox.askyesnocancel('CLOSE', "Do you want to save sign: ", parent=master)
             if decision:
                 savecall()
             elif decision is None:
                 return
         print 'closing the robot'
         tools.multi_servo_set([200, 200, 100, 100, 200, 100, 100, 100, 100], [200, 200, 100, 100, 200, 100, 100, 100, 100], L, R)
-        present_position = [motor[name].present_position for name in dead_motors]
-        goal_position = [0 for name in dead_motors]
+        present_position = {"Robot": [motor[name].present_position for name in dead_motors],
+                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                            "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+        goal_position = {"Robot": [0 for name in dead_motors],
+                         "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                         "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
         tools.go_to_pos(dead_motors, present_position, goal_position, pub)
 
-        present_position = [motor[name].present_position for name in active_motors]
-        goal_position = [0 for name in active_motors]
+        present_position = {"Robot": [motor[name].present_position for name in active_motors],
+                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                            "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+        goal_position = {"Robot": [0 for name in active_motors],
+                         "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                         "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
         tools.go_to_pos(active_motors, present_position, goal_position, pub)
         tools.releas(active_motors, pub, L, R)
         print 'Robot Closed'
@@ -268,7 +284,7 @@ def __init__(master, movement, motor, pub):
 
     def savecall():
         print 'saving movement'
-        saveFile = tkFileDialog.asksaveasfilename(defaultextension="json", initialdir="/home/odroid/catkin_ws/src/robot_body/recording/data_base")
+        saveFile = tkFileDialog.asksaveasfilename(defaultextension="json", initialdir="/home/odroid/catkin_ws/src/robot_body/recording/data_base", parent=master)
         if not saveFile:
             return None
         with open(saveFile, "w") as record:
@@ -354,7 +370,7 @@ def __init__(master, movement, motor, pub):
     def saveL():
         lefthandpos = [master.Lwrist_V.get(), master.Lwrist_H.get(), master.Lthump_J.get(), master.Lthump.get(),
                               master.LOpen.get(), master.Lindex.get(), master.Lmajor.get(), master.Lring.get(), master.Lauri.get()]
-        name = tkSimpleDialog.askstring('Left Hand set name', 'Please enter the name of the Left hand set')
+        name = tkSimpleDialog.askstring('Left Hand set name', 'Please enter the name of the Left hand set', parent=master)
         if name:
             handSetting["Left"][name] = lefthandpos
             L_handSets.insert(len(handSetting["Left"]), name)
@@ -367,7 +383,7 @@ def __init__(master, movement, motor, pub):
     def saveR():
         righthandpos = [master.Rwrist_V.get(), master.Rwrist_H.get(), master.Rthump_J.get(), master.Rthump.get(),
                                 master.ROpen.get(), master.Rindex.get(), master.Rmajor.get(), master.Rring.get(), master.Rauri.get()]
-        name = tkSimpleDialog.askstring('Right Hand set name', 'Please enter the name of the Right hand set')
+        name = tkSimpleDialog.askstring('Right Hand set name', 'Please enter the name of the Right hand set', parent=master)
         if name:
             handSetting["Right"][name] = righthandpos
             R_handSets.insert(len(handSetting["Right"]), name)
@@ -458,7 +474,7 @@ def __init__(master, movement, motor, pub):
     def L_DEL():
 
         if list(L_handSets.curselection()):
-            if tkMessageBox.askyesno(title='Warning', message='do you want to DELETE ' + L_handSets.get(L_handSets.curselection()) + ' ?'):
+            if tkMessageBox.askyesno(title='Warning', message='do you want to DELETE ' + L_handSets.get(L_handSets.curselection()) + ' ?', parent=master):
                 with open("/home/odroid/catkin_ws/src/robot_body/recording/handSetting.json") as f:
                     handSetting = json.load(f)
                 del handSetting["Left"][L_handSets.get(L_handSets.curselection())]
@@ -472,7 +488,7 @@ def __init__(master, movement, motor, pub):
     def R_DEL():
 
         if list(R_handSets.curselection()):
-            if tkMessageBox.askyesno(title='Warning', message='do you want to DELETE ' + R_handSets.get(R_handSets.curselection()) + ' ?'):
+            if tkMessageBox.askyesno(title='Warning', message='do you want to DELETE ' + R_handSets.get(R_handSets.curselection()) + ' ?', parent=master):
                 with open("/home/odroid/catkin_ws/src/robot_body/recording/handSetting.json", "r") as f:
                     handSetting = json.load(f)
                 del handSetting["Right"][R_handSets.get(R_handSets.curselection())]

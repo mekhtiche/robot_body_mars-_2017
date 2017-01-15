@@ -50,10 +50,10 @@ find_package(catkin REQUIRED COMPONENTS
  add_message_files(
  FILES
 motorStat.msg
-motorStatList.msg
+#motorStatList.msg
 motorSet.msg
-servoSet.msg
-servoCmd.msg
+#servoSet.msg
+#servoCmd.msg
  )
 
 ## Generate services in the 'srv' folder

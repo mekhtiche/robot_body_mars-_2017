@@ -32,10 +32,12 @@ def build_seq(curent_pos, pos, max_err):
     i = 0
     for frame in frames:
         pre_sign[str(i)] = {
-            'Robot': [curent_pos[ndx] + frame * frame * (3 - 2 * frame) * (pos[ndx] - curent_pos[ndx])
-                      for ndx in range(len(pos))],
-            'Right_hand': [200, 200, 100, 100, 200, 100, 100, 100, 100],
-            'Left_hand': [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+            'Robot': [curent_pos["Robot"][ndx] + frame * frame * (3 - 2 * frame) * (pos["Robot"][ndx] - curent_pos["Robot"][ndx])
+                      for ndx in range(len(pos["Robot"]))],
+            'Right_hand': [curent_pos["Right_hand"][ndx] + frame * frame * (3 - 2 * frame) * (pos["Right_hand"][ndx] - curent_pos["Right_hand"][ndx])
+                           for ndx in range(len(pos["Right_hand"]))],
+            'Left_hand': [curent_pos["Left_hand"][ndx] + frame * frame * (3 - 2 * frame) * (pos["Left_hand"][ndx] - curent_pos["Left_hand"][ndx])
+                           for ndx in range(len(pos["Left_hand"]))]}
         i += 1
     return pre_sign
 
@@ -44,16 +46,16 @@ def go_to_pos(motors, present_position, goal_position, pub, L=None, R=None):
     err_max = 5
     try:
         max_err = 0
-        for id in range(len(goal_position)):
-            max_err = max([abs(goal_position[id] - present_position[id]), max_err])
+        for id in range(len(goal_position["Robot"])):
+            max_err = max([abs(goal_position["Robot"][id] - present_position["Robot"][id]), max_err])
         if max_err > err_max:
             print 'Going to pos'
             preset = build_seq(present_position, goal_position, int(max_err))
             do_seq(motors, max_err, preset, pub, L, R)
         else:
             print 'robot in pos'
-            pos = {'0':{'Robot':goal_position}}
-            do_seq(motors, 100, pos, pub, L, R)
+            pos = {'0':goal_position}
+            do_seq(motors, 100, pos, pub)
     except Exception, err:
         print 'Robot can go, error is '
         print  err

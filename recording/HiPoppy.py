@@ -245,8 +245,10 @@ class RECORDING_1():
     def PLAY(self):
 
         print 'Playing'
-        present_position = [motor[name].present_position for name in self.motorsName]
-        goal_position = self.movement['position']['0']['Robot']
+        present_position = {"Robot": [motor[name].present_position for name in self.motorsName],
+                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                            "Left_hand" : [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+        goal_position = self.movement['position']['0']
         tools.go_to_pos(self.movement['actors_NAME'], present_position, goal_position, pub)
         tools.do_seq(self.movement['actors_NAME'], self.movement['freq'], self.movement['position'], pub)
         print 'Done'
@@ -262,8 +264,12 @@ class RECORDING_1():
 
     def CLOSE(self):
         print 'closing the robot'
-        present_position = [motor[name].present_position for name in self.motorsName]
-        goal_position = [0 for name in self.motorsName]
+        present_position = {"Robot": [motor[name].present_position for name in self.motorsName],
+                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                            "Left_hand" : [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+        goal_position = {"Robot": [0 for name in self.motorsName],
+                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                            "Left_hand" : [200, 200, 100, 100, 200, 100, 100, 100, 100]}
         tools.go_to_pos(self.motorsName, present_position, goal_position, pub)
         tools.releas(self.motorsName, pub)
         print 'Robot Closed'
@@ -290,7 +296,7 @@ class RECORDING_1():
         self.stpTm = Label(master, text="Time to stop").grid(row=2, column=1)
         self.STP = IntVar(self.master, value=1)
         self.stop = Checkbutton(master, variable = self.STP, command = self.timeToStop).grid(row=2, column=0)
-        self.StpTm = StringVar(self.master, value='10')
+        self.StpTm = StringVar(self.master, value='5')
         self.stopTime = Entry(self.master, width=10, textvariable=self.StpTm)
         self.stopTime.grid(row=2, column=2, sticky=W)
         self.startRec = Button(self.master, text = 'Start Recording', width = 10, command = self.STARTREC)
@@ -316,8 +322,12 @@ class RECORDING_1():
         self.STOP = 0
 
         print('Starting the ROBOT')
-        present_position = [motor[name].present_position for name in self.deadmotors]
-        goal_position = [0 for name in self.deadmotors]
+        present_position = {"Robot": [motor[name].present_position for name in self.deadmotors],
+                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                            "Left_hand" : [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+        goal_position = {"Robot": [0 for name in self.deadmotors],
+                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                            "Left_hand" : [200, 200, 100, 100, 200, 100, 100, 100, 100]}
         tools.go_to_pos(self.deadmotors, present_position, goal_position, pub)
         tools.releas(self.motorsName, pub)
         print('Robot started')

@@ -27,11 +27,11 @@ pub = dict()
 def Openning():
     print('Starting the ROBOT')
     try:
-
-
-        present_position = [m.present_position for m in robot.Active_motors]
-        goal_position = [0 for m in robot.Active_motors]
-        max_err = max(map(abs,present_position))
+        right_hand = [200, 200, 100, 100, 200, 100, 100, 100, 100]
+        left_hand = [200, 200, 100, 100, 200, 100, 100, 100, 100]
+        present_position = {"Robot": [m.present_position for m in robot.Active_motors], 'Right_hand': right_hand, 'Left_hand': left_hand}
+        goal_position = {"Robot": [0 for m in robot.Active_motors], 'Right_hand': right_hand, 'Left_hand': left_hand}
+        max_err = max(map(abs,present_position["Robot"]))
         if max_err > err_max:
             preset = tools.build_seq(present_position, goal_position, int(max_err))
             for frame in range(len(preset)):

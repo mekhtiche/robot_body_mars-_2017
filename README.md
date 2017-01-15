@@ -6,8 +6,6 @@ this package need :
 
                     ROS Kinetic 
 
-                    I2C tools 
-                    
                     pyserial
                     
                     enum
@@ -19,15 +17,7 @@ Installation:
   ROS:
   
     install ROS Kinetic http://wiki.ros.org/kinetic/Installation/Ubuntu
-    
-  I2C:
-
-
-      $ sudo apt-get update
-      $ sudo apt-get install python-smbus
-      $ sudo apt-get install i2c-tools
-
-    
+        
   
   Python packages:
   
@@ -43,7 +33,7 @@ Installation:
 
       $ cd catkin_ws/src
 
-      $ git clone https://github.com/mekhtiche/robot_new.git
+      $ git clone https://github.com/mekhtiche/robot_body.git
 
       $ cd ..
 
@@ -58,19 +48,14 @@ Installation:
     
   To launch the robot:
 
-      $ roslaunch robot Robot_start.launch
+      $ roslaunch robot_body Robot_start.launch
+
+      $ roslaunch robot_body Robot_start_stat.launch
 
   To record sign:
 
-      $ roslaunch robot Recording.launch
+      $ roslaunch robot_body Recording.launch
 
+      $ roslaunch robot_body Recording_stat.launch
 
-  if you have permission denied error you need to change the permission of Servo_driver.py and finger.py
-
-      $ cd catkin_ws/src/robot/driver
-
-      $ chmod 775 Servo_driver.py 
-
-      $ cd catkin_ws/src/robot/recording
-
-      $ chmod 775 finger.py 
+  

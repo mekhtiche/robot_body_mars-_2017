@@ -6,11 +6,6 @@
 	<node name="Word_listener" pkg="robot_body"  type="word_listener.py"  output="screen"/>
 	<node name="Robot_driver" pkg="robot_body"  type="Robot_driver.py"  output="screen"/>
 	<node name="Robot_state" pkg="robot_body"  type="robot_stat.py"  output="screen"/>
-<!--	<node name="Finger_driver" pkg="robot_body" type="Servo_driver.py" output="screen"/>   -->
-<!-- set a private parameter for the node -->
-<!--	<node name="CAMERA" pkg="usb_cam" type="usb_cam_node" output="screen"/>       -->
-<!--	<node name="VIEWER" pkg="image_view" type="image_view" ns="usb_cam" output="screen">     -->
-<!--		<remap from="image" to="/CAMERA/image_raw" />     -->
-<!--	</node>      -->
+	<node name="Words_publisher" pkg="robot_body" type="words_publisher.py" output="screen"/>
 
 </launch>
