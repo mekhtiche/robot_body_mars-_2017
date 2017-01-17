@@ -65,7 +65,7 @@ def robot_stat():
 def main():
     master = Tk()
 
-    master.geometry('320x720')
+    master.geometry('320x720+550+0')
     master.title('ROBOT STATE')
     master.config(bg='white')
     info = Label(master, width=10,height=6,text='Name:\nId:\nLoad:\nMax_Load:\nVoltage:\nTemp:', font=infofont, bg='white')

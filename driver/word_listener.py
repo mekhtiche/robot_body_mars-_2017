@@ -17,8 +17,8 @@ R = dict()
 L = dict()
 
 for servo in range(1, 10):
-    R[servo] = rospy.Publisher('servo/R' + str(servo), Int16, queue_size=10)
-    L[servo] = rospy.Publisher('servo/L' + str(servo), Int16, queue_size=10)
+    R[servo] = rospy.Publisher('servo/R' + str(servo), Int16, queue_size=1)
+    L[servo] = rospy.Publisher('servo/L' + str(servo), Int16, queue_size=1)
 
 
 print "WORD_LISTENNER successful import"
@@ -53,6 +53,7 @@ def do_sign(buffer):
                     names = movement["actors_NAME"]
                     frames = movement["frame_number"]
                     freq = float(movement["freq"])
+                    print freq
                     sign = movement["position"]
                     id = 0
                     max_err = 0
@@ -90,7 +91,7 @@ def listener():
     list = ['abs_z', 'bust_y', 'bust_x', 'head_z', 'head_y', 'l_shoulder_y', 'l_shoulder_x', 'l_arm_z', 'l_elbow_y',
             'l_forearm_z', 'r_shoulder_y', 'r_shoulder_x', 'r_arm_z', 'r_elbow_y', 'r_forearm_z']
     for name in list:
-        pub[name] = rospy.Publisher('poppy/set/' + name, motorSet, queue_size=10)
+        pub[name] = rospy.Publisher('poppy/set/' + name, motorSet, queue_size=1)
         rospy.Subscriber('poppy/get/' + name, motorStat, callback=get_motors)
         present_pos[name]=[]
     print 'WORD_LISTENER publishers & subscribers successful Initial'

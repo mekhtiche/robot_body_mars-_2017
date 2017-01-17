@@ -123,6 +123,35 @@ class REC():
             # self.master.wait_window(RECD)
             myRec = RECORDING_1(rec_fram, mtrs)
 
+    def pos_nextCall(self):
+        selected = ''
+        i = 0
+        mtrs = []
+        nonActive = []
+        for var, value in sorted(self.cb.items()):
+            if self.lcb[i] in self.motor_names:
+                if value.get():
+                    selected += self.lcb[i]
+                    selected += ' '
+                    mtrs.append(self.lcb[i])
+                else:
+                    nonActive.append(self.lcb[i])
+            i += 1
+            #        print mtrs
+            #        print nonActive
+        if selected == '':
+            #  tkMessageBox.ERROR
+            tkMessageBox.showerror(title='Warning', message='You need to select at least ONE Actor!')
+            return None
+        if tkMessageBox.askyesno(title='Warning',
+                                 message='Warning: You selected folowing actors: ' + str(
+                                     selected) + 'the rest of robot will be in mode "freeze" do you want to continue?'):
+            pos_rec_fram = Toplevel()
+            pos_rec_fram.grab_set()
+            pos_rec_fram.transient(self.master)
+            # self.master.wait_window(RECD)
+            myPosRec = RECORDING_2(pos_rec_fram, mtrs)
+
     def method(self):
         if self.Var.get() == 1:
             for key, value in self.chkb.items():
@@ -176,9 +205,10 @@ class REC():
                                for name in c_params['attached_motors']], [])
         self.stat = [0] * len(self.cb)
 
-        self.Next = Button(master, text="Next", width=10, command=self.nextCall)
+        self.Next = Button(master, text="Manual Recording", width=20, command=self.nextCall)
         self.Next.pack(anchor=N)
-
+        self.PosByPos = Button(master, text="POS_BY_POS Recording", width=20, command=self.pos_nextCall)
+        self.PosByPos.pack(anchor=N)
         self.option2 = Radiobutton(self.master, text="Edit old Sign", variable=self.Var, value = 2, command=self.method)
         self.option2.pack(anchor=NW)
         self.option2.deselect()
@@ -224,8 +254,7 @@ class RECORDING_1():
                        'actors_NAME':self.motorsName,
                        'freq': self.Frq.get(),
                        'frame_number':self.frames,
-                       'position':
-                           self.pos
+                       'position':self.pos
                        }
         self.save.config(state=NORMAL)
         self.play.config(state=NORMAL)
@@ -333,10 +362,196 @@ class RECORDING_1():
         print('Robot started')
 
 
+class RECORDING_2():
+
+    def setcall(self):
+        print "setting"
+        self.settings["SET" + str(self.sets.size() + 1)] = [motor[name].present_position
+                                                            for name in self.motorsName]
+        self.sets.insert(END, "SET" + str(self.sets.size() + 1))
+        self.play.config(state=DISABLED)
+        self.save.config(state=DISABLED)
+        self.edit.config(state=NORMAL)
+        self.delete.config(state=NORMAL)
+        if self.sets.size() > 1:
+            self.build.config(state=NORMAL)
+
+    def build(self):
+        print "build"
+        self.sign={"position":{}}
+        i=0
+        if len(self.settings) < 2:
+            print "error: you need at least TWO SETTINGS"
+            return
+        elif len(self.settings) < 3:
+            method="Smooth"
+        else:
+            method="Smooth"   # "Linear"
+        for SET in range(len(self.settings)-1):
+            max_err = max([abs(self.settings["SET"+str(SET+1)][ndx] - self.settings["SET"+str(SET+1+1)][ndx])
+                           for ndx in range(len(self.settings["SET"+str(SET+1+1)]))])
+            self.sign["position"].update(tools.build_sign(self.settings["SET"+str(SET+1)], self.settings["SET"+str(SET+1+1)], i, int(max_err), method))
+            i=len(self.sign["position"])
+        self.sign["actors_NAME"]=self.motorsName
+        self.sign["frame_number"]=i
+        self.play.config(state=NORMAL)
+        self.save.config(state=NORMAL)
+        print 'done'
+
+    def play(self):
+        print "play"
+        present_position = {"Robot": [motor[name].present_position for name in self.motorsName],
+                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                            "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+        goal_position = self.sign["position"]["0"]
+        tools.go_to_pos(self.motorsName, present_position, goal_position,pub)
+        for frame in range(len(self.sign["position"])):
+            id=0
+            for name in self.sign["actors_NAME"]:
+                MOTOR.compliant=False
+                MOTOR.goal_position=self.sign["position"][str(frame)]["Robot"][id]
+                id+=1
+                pub[name].publish(MOTOR)
+            time.sleep(float(self.time.get()) / float(self.sign["frame_number"]))
+        print 'done'
+
+    def save(self):
+        print "save"
+
+        print 'saving Sign'
+        saveFile = tkFileDialog.asksaveasfilename(defaultextension="json",
+                                                  initialdir="/home/odroid/catkin_ws/src/robot_body/recording/data_base",
+                                                  parent=self.master)
+        if not saveFile:
+            return None
+
+        self.sign["freq"]=float(self.sign["frame_number"])/float(self.time.get())
+
+        with open(saveFile, "w") as record:
+            json.dump(self.sign, record)
+        print 'saved'
+
+    def close(self):
+        print 'closing the robot'
+        present_position = {"Robot": [motor[name].present_position for name in self.motorsName],
+                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                            "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+        goal_position = {"Robot": [0 for name in self.motorsName],
+                         "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                         "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+        tools.go_to_pos(self.motorsName, present_position, goal_position, pub)
+        tools.releas(self.motorsName, pub)
+        print 'Robot Closed'
+        self.master.destroy()
+
+    def edit(self):
+        print "edit"
+        if self.sets.curselection():
+            curs = int(self.sets.curselection()[0])
+            self.settings["SET" + str(curs + 1)] = [motor[name].present_position for name in self.motorsName]
+        self.play.config(state=DISABLED)
+        self.save.config(state=DISABLED)
+
+
+    def delete(self):
+        if self.sets.curselection():
+            print "delete"
+            curs = int(self.sets.curselection()[0])
+            for ndx in range(curs, self.sets.size() - 1):
+                self.settings["SET" + str(ndx + 1)] = self.settings["SET" + str(ndx + 1 + 1)]
+                self.sets.delete(ndx)
+                self.sets.insert(ndx, "SET" + str(ndx + 1))
+            del self.settings["SET" + str(len(self.settings))]
+            self.sets.delete(END)
+            self.play.config(state=DISABLED)
+            self.save.config(state=DISABLED)
+            if self.sets.size() < 1:
+                self.edit.config(state=DISABLED)
+                self.delete.config(state=DISABLED)
+            elif self.sets.size() < 2:
+                self.build.config(state=DISABLED)
+
+
+    def selection(self, evn):
+        if list(self.activemotors.curselection()):
+            selected = [self.activemotors.get(ndx) for ndx in list(self.activemotors.curselection())]
+            unselected = [self.activemotors.get(ndx) for ndx in range(self.activemotors.size())
+                          if ndx not in list(self.activemotors.curselection())]
+        else:
+            selected=[]
+            unselected=self.activemotors.get(0, END)
+        print selected
+        print unselected
+        for name in self.motorsName:
+            if name in selected:
+                MOTOR.compliant = False
+                MOTOR.goal_position = motor[name].present_position
+            else:
+                MOTOR.compliant = True
+            pub[name].publish(MOTOR)
+
+    def __init__(self, master, motors):
+        self.motorsName = motors
+        self.deadmotors = [x for x in motor_names if x not in self.motorsName]
+        self.master = master
+        self.master.geometry('540x220')
+        self.master.title('POS_BY_POS RECORDING')
+        self.setpos = Button(master, text="Set pos", width=5, command=self.setcall)
+        self.setpos.grid(row=0, column=0)
+        self.build = Button(master, text="Build", width=5, command=self.build)
+        self.build.grid(row=1, column=0)
+        self.build.config(state=DISABLED)
+        self.play = Button(master, text="Play", width=5, command=self.play)
+        self.play.grid(row=2, column=0)
+        self.play.config(state=DISABLED)
+        self.save = Button(master, text="Save", width=5, command=self.save)
+        self.save.grid(row=3, column=0)
+        self.save.config(state=DISABLED)
+        self.close = Button(master, text="Close", width=5, command=self.close)
+        self.close.grid(row=4, column=2)
+        self.time = StringVar(value=1)
+        self.timeEntry = Entry(master, width=5, textvariable=self.time)
+        self.timeEntry.grid(row=4, column=0)
+        self.sets = Listbox(master, height=5, width=10)
+        self.sets.grid(row=0, column=1, rowspan= 3,columnspan=2)
+        self.activemotors = Listbox(master, height=10, width=10, selectmode=MULTIPLE)
+        self.activemotors.grid(row=0, column=3, rowspan=5)
+        self.activemotors.bind('<<ListboxSelect>>', self.selection)
+        self.edit = Button(master, text="Edit", width=5, command=self.edit)
+        self.edit.grid(row=3, column=1)
+        self.edit.config(state=DISABLED)
+        self.delete = Button(master, text="Delete", width=5, command=self.delete)
+        self.delete.grid(row=3, column=2)
+        self.delete.config(state=DISABLED)
+        print self.motorsName
+        print self.deadmotors
+        for name in self.motorsName:
+            self.activemotors.insert(END, str(name))
+        self.settings = {}
+        self.sign = {}
+
+
+
+
+        print('Starting the ROBOT')
+        present_position = {"Robot": [motor[name].present_position for name in self.deadmotors],
+                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                            "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+        goal_position = {"Robot": [0 for name in self.deadmotors],
+                         "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                         "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+        tools.go_to_pos(self.deadmotors, present_position, goal_position, pub)
+        tools.releas(self.motorsName, pub)
+        print('Robot started')
+
+
+
+
+
 
 pub = dict()
 motor = dict()
-
+MOTOR = motorSet()
 
 
 def get_motors(data):

@@ -41,6 +41,18 @@ def build_seq(curent_pos, pos, max_err):
         i += 1
     return pre_sign
 
+def build_sign(first_pos, final_pos, init_fram, max_err, method="Smooth"):
+    pre_sign = {}
+    frames = [float(x) / max_err for x in range(max_err + 1)]
+    i = init_fram
+    for frame in frames:
+        pre_sign[str(i)] = {
+            'Robot': [first_pos[ndx] + frame * frame * (3 - 2 * frame) * (final_pos[ndx] - first_pos[ndx]) if method == "Smooth" else
+                      (1 - frame) * first_pos[ndx] + frame * final_pos[ndx] for ndx in range(len(final_pos)) ],
+            'Right_hand': [200, 200, 100, 100, 200, 100, 100, 100, 100],
+            'Left_hand': [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+        i += 1
+    return pre_sign
 
 def go_to_pos(motors, present_position, goal_position, pub, L=None, R=None):
     err_max = 5
