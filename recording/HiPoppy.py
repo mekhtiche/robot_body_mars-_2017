@@ -490,6 +490,7 @@ class RECORDING_2():
         edit_fram = Toplevel()
         edit_fram.grab_set()
         edit_fram.transient(self.master)
+        self.sign["freq"]=float(self.sign["frame_number"])/float(self.time.get())
         handsSet = finger.__init__(edit_fram, self.sign, motor, pub)
 
     def __init__(self, master, motors):
