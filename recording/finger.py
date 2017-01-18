@@ -420,9 +420,9 @@ def __init__(master, movement, motor, pub):
     recR.pack()
 
 
-    L_handSets = Listbox(medButt, height=10, width=15)
+    L_handSets = Listbox(medButt, height=33, width=15)
     L_handSets.grid(row=2, column=0, columnspan=2)
-    R_handSets = Listbox(medButt, height=10, width=15)
+    R_handSets = Listbox(medButt, height=33, width=15)
     R_handSets.grid(row=2, column=2, columnspan=2)
     try:
         with open("/home/odroid/catkin_ws/src/robot_body/recording/handSetting.json", "r") as f:

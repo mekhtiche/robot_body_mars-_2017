@@ -206,19 +206,19 @@ class REC():
         self.stat = [0] * len(self.cb)
 
         self.Next = Button(master, text="Manual Recording", width=20, command=self.nextCall)
-        self.Next.pack(anchor=N)
+        self.Next.pack(anchor=NW)
         self.PosByPos = Button(master, text="POS_BY_POS Recording", width=20, command=self.pos_nextCall)
-        self.PosByPos.pack(anchor=N)
+        self.PosByPos.pack(anchor=NW)
         self.option2 = Radiobutton(self.master, text="Edit old Sign", variable=self.Var, value = 2, command=self.method)
         self.option2.pack(anchor=NW)
         self.option2.deselect()
 
         self.loadFile = Button(self.master, text="Load File", width=10, command=self.editSign)
-        self.loadFile.pack(anchor=N)
+        self.loadFile.pack(anchor=NW)
         self.loadFile.config(state=DISABLED)
 
         self.Cancel = Button(master, text="Cancel", width=10, command=self.cancelCall)
-        self.Cancel.pack(anchor=W)
+        self.Cancel.pack(anchor=E)
 
 
 
@@ -365,19 +365,18 @@ class RECORDING_1():
 class RECORDING_2():
 
     def setcall(self):
-        print "setting"
         self.settings["SET" + str(self.sets.size() + 1)] = [motor[name].present_position
                                                             for name in self.motorsName]
         self.sets.insert(END, "SET" + str(self.sets.size() + 1))
         self.play.config(state=DISABLED)
         self.save.config(state=DISABLED)
+        self.set_hand.config(state=DISABLED)
         self.edit.config(state=NORMAL)
         self.delete.config(state=NORMAL)
         if self.sets.size() > 1:
             self.build.config(state=NORMAL)
-
+        self.info.set("Done setting")
     def build(self):
-        print "build"
         self.sign={"position":{}}
         i=0
         if len(self.settings) < 2:
@@ -396,10 +395,11 @@ class RECORDING_2():
         self.sign["frame_number"]=i
         self.play.config(state=NORMAL)
         self.save.config(state=NORMAL)
-        print 'done'
+        self.set_hand.config(state=NORMAL)
+        self.info.set("Done building")
 
     def play(self):
-        print "play"
+        self.info.set("Playing")
         present_position = {"Robot": [motor[name].present_position for name in self.motorsName],
                             "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
                             "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
@@ -413,12 +413,10 @@ class RECORDING_2():
                 id+=1
                 pub[name].publish(MOTOR)
             time.sleep(float(self.time.get()) / float(self.sign["frame_number"]))
-        print 'done'
+        self.info.set("Done")
 
     def save(self):
-        print "save"
-
-        print 'saving Sign'
+        self.info.set("Saving sign ...")
         saveFile = tkFileDialog.asksaveasfilename(defaultextension="json",
                                                   initialdir="/home/odroid/catkin_ws/src/robot_body/recording/data_base",
                                                   parent=self.master)
@@ -429,10 +427,10 @@ class RECORDING_2():
 
         with open(saveFile, "w") as record:
             json.dump(self.sign, record)
-        print 'saved'
+        self.info.set("Saved")
 
     def close(self):
-        print 'closing the robot'
+        self.info.set("Closing the Robot")
         present_position = {"Robot": [motor[name].present_position for name in self.motorsName],
                             "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
                             "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
@@ -441,21 +439,20 @@ class RECORDING_2():
                          "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
         tools.go_to_pos(self.motorsName, present_position, goal_position, pub)
         tools.releas(self.motorsName, pub)
-        print 'Robot Closed'
+        self.info.set("Robot Closed")
         self.master.destroy()
 
     def edit(self):
-        print "edit"
         if self.sets.curselection():
             curs = int(self.sets.curselection()[0])
             self.settings["SET" + str(curs + 1)] = [motor[name].present_position for name in self.motorsName]
-        self.play.config(state=DISABLED)
-        self.save.config(state=DISABLED)
-
+            self.play.config(state=DISABLED)
+            self.save.config(state=DISABLED)
+            self.set_hand.config(state=DISABLED)
+            self.info.set("Set"+str(curs+1)+" edited")
 
     def delete(self):
         if self.sets.curselection():
-            print "delete"
             curs = int(self.sets.curselection()[0])
             for ndx in range(curs, self.sets.size() - 1):
                 self.settings["SET" + str(ndx + 1)] = self.settings["SET" + str(ndx + 1 + 1)]
@@ -465,12 +462,13 @@ class RECORDING_2():
             self.sets.delete(END)
             self.play.config(state=DISABLED)
             self.save.config(state=DISABLED)
+            self.set_hand.config(state=DISABLED)
             if self.sets.size() < 1:
                 self.edit.config(state=DISABLED)
                 self.delete.config(state=DISABLED)
             elif self.sets.size() < 2:
                 self.build.config(state=DISABLED)
-
+            self.info.set("Set"+str(curs+1)+" deleted")
 
     def selection(self, evn):
         if list(self.activemotors.curselection()):
@@ -480,8 +478,6 @@ class RECORDING_2():
         else:
             selected=[]
             unselected=self.activemotors.get(0, END)
-        print selected
-        print unselected
         for name in self.motorsName:
             if name in selected:
                 MOTOR.compliant = False
@@ -490,41 +486,59 @@ class RECORDING_2():
                 MOTOR.compliant = True
             pub[name].publish(MOTOR)
 
+    def Handset(self):
+        edit_fram = Toplevel()
+        edit_fram.grab_set()
+        edit_fram.transient(self.master)
+        handsSet = finger.__init__(edit_fram, self.sign, motor, pub)
+
     def __init__(self, master, motors):
         self.motorsName = motors
         self.deadmotors = [x for x in motor_names if x not in self.motorsName]
         self.master = master
-        self.master.geometry('540x220')
+        self.master.geometry('250x200')
         self.master.title('POS_BY_POS RECORDING')
+        self.tl = Label(master, text="Time:")
+        self.tl.grid(row=0, column=0)
+        self.time = StringVar(value=1)
+        self.timeEntry = Entry(master, width=3, textvariable=self.time)
+        self.timeEntry.grid(row=0, column=1)
         self.setpos = Button(master, text="Set pos", width=5, command=self.setcall)
-        self.setpos.grid(row=0, column=0)
+        self.setpos.grid(row=1, column=0, columnspan=2)
         self.build = Button(master, text="Build", width=5, command=self.build)
-        self.build.grid(row=1, column=0)
+        self.build.grid(row=2, column=0, columnspan=2)
         self.build.config(state=DISABLED)
         self.play = Button(master, text="Play", width=5, command=self.play)
-        self.play.grid(row=2, column=0)
+        self.play.grid(row=3, column=0, columnspan=2)
         self.play.config(state=DISABLED)
         self.save = Button(master, text="Save", width=5, command=self.save)
-        self.save.grid(row=3, column=0)
+        self.save.grid(row=4, column=0, columnspan=2)
         self.save.config(state=DISABLED)
-        self.close = Button(master, text="Close", width=5, command=self.close)
-        self.close.grid(row=4, column=2)
-        self.time = StringVar(value=1)
-        self.timeEntry = Entry(master, width=5, textvariable=self.time)
-        self.timeEntry.grid(row=4, column=0)
-        self.sets = Listbox(master, height=5, width=10)
-        self.sets.grid(row=0, column=1, rowspan= 3,columnspan=2)
-        self.activemotors = Listbox(master, height=10, width=10, selectmode=MULTIPLE)
-        self.activemotors.grid(row=0, column=3, rowspan=5)
+        self.info = StringVar()
+        self.show = Label(master,textvariable=self.info)
+        self.show.grid(row=5, column=0, columnspan=4)
+        self.set_hand = Button(master, text="Config fingers", width=8, command=self.Handset)
+        self.set_hand.grid(row=5, column=4)
+        self.set_hand.config(state=DISABLED)
+        self.close = Button(master, text="Close", width=8, command=self.close)
+        self.close.grid(row=6, column=4)
+        self.sl = Label(master, text="Settings")
+        self.sl.grid(row=0, column=2, columnspan=2)
+        self.sets = Listbox(master, height=5, width=8)
+        self.sets.grid(row=1, column=2, rowspan= 3,columnspan=2)
+        self.mtr_l = Label(master, text="Motors to block")
+        self.mtr_l.grid(row=0, column=4)
+        self.activemotors = Listbox(master, height=7, width=12, selectmode=MULTIPLE)
+        self.activemotors.grid(row=1, column=4, rowspan=4)
         self.activemotors.bind('<<ListboxSelect>>', self.selection)
-        self.edit = Button(master, text="Edit", width=5, command=self.edit)
-        self.edit.grid(row=3, column=1)
+        self.edit = Button(master, text="Edit", width=1, command=self.edit)
+        self.edit.grid(row=4, column=2)
         self.edit.config(state=DISABLED)
-        self.delete = Button(master, text="Delete", width=5, command=self.delete)
-        self.delete.grid(row=3, column=2)
+        self.delete = Button(master, text="Del", width=1, command=self.delete)
+        self.delete.grid(row=4, column=3)
         self.delete.config(state=DISABLED)
-        print self.motorsName
-        print self.deadmotors
+        #print self.motorsName
+        #print self.deadmotors
         for name in self.motorsName:
             self.activemotors.insert(END, str(name))
         self.settings = {}
@@ -543,7 +557,7 @@ class RECORDING_2():
         tools.go_to_pos(self.deadmotors, present_position, goal_position, pub)
         tools.releas(self.motorsName, pub)
         print('Robot started')
-
+        self.info.set("Robot is Ready")
 
 
 
