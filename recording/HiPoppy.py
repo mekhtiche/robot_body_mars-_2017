@@ -274,11 +274,8 @@ class RECORDING_1():
     def PLAY(self):
 
         print 'Playing'
-        present_position = {"Robot": [motor[name].present_position for name in self.motorsName],
-                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
-                            "Left_hand" : [200, 200, 100, 100, 200, 100, 100, 100, 100]}
         goal_position = self.movement['position']['0']
-        tools.go_to_pos(self.movement['actors_NAME'], present_position, goal_position, pub)
+        tools.go_to_pos(self.movement['actors_NAME'], motor, goal_position, pub)
         tools.do_seq(self.movement['actors_NAME'], self.movement['freq'], self.movement['position'], pub)
         print 'Done'
 
@@ -293,13 +290,10 @@ class RECORDING_1():
 
     def CLOSE(self):
         print 'closing the robot'
-        present_position = {"Robot": [motor[name].present_position for name in self.motorsName],
-                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
-                            "Left_hand" : [200, 200, 100, 100, 200, 100, 100, 100, 100]}
         goal_position = {"Robot": [0 for name in self.motorsName],
                             "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
                             "Left_hand" : [200, 200, 100, 100, 200, 100, 100, 100, 100]}
-        tools.go_to_pos(self.motorsName, present_position, goal_position, pub)
+        tools.go_to_pos(self.motorsName, motor, goal_position, pub)
         tools.releas(self.motorsName, pub)
         print 'Robot Closed'
         self.master.destroy()
@@ -351,13 +345,10 @@ class RECORDING_1():
         self.STOP = 0
 
         print('Starting the ROBOT')
-        present_position = {"Robot": [motor[name].present_position for name in self.deadmotors],
-                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
-                            "Left_hand" : [200, 200, 100, 100, 200, 100, 100, 100, 100]}
         goal_position = {"Robot": [0 for name in self.deadmotors],
                             "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
                             "Left_hand" : [200, 200, 100, 100, 200, 100, 100, 100, 100]}
-        tools.go_to_pos(self.deadmotors, present_position, goal_position, pub)
+        tools.go_to_pos(self.deadmotors, motor, goal_position, pub)
         tools.releas(self.motorsName, pub)
         print('Robot started')
 
@@ -400,11 +391,8 @@ class RECORDING_2():
 
     def play(self):
         self.info.set("Playing")
-        present_position = {"Robot": [motor[name].present_position for name in self.motorsName],
-                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
-                            "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
         goal_position = self.sign["position"]["0"]
-        tools.go_to_pos(self.motorsName, present_position, goal_position,pub)
+        tools.go_to_pos(self.motorsName, motor, goal_position,pub)
         for frame in range(len(self.sign["position"])):
             id=0
             for name in self.sign["actors_NAME"]:
@@ -431,13 +419,10 @@ class RECORDING_2():
 
     def close(self):
         self.info.set("Closing the Robot")
-        present_position = {"Robot": [motor[name].present_position for name in self.motorsName],
-                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
-                            "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
         goal_position = {"Robot": [0 for name in self.motorsName],
                          "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
                          "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
-        tools.go_to_pos(self.motorsName, present_position, goal_position, pub)
+        tools.go_to_pos(self.motorsName, motor, goal_position, pub)
         tools.releas(self.motorsName, pub)
         self.info.set("Robot Closed")
         self.master.destroy()
@@ -490,6 +475,7 @@ class RECORDING_2():
         edit_fram = Toplevel()
         edit_fram.grab_set()
         edit_fram.transient(self.master)
+        self.sign["freq"]=float(self.sign["frame_number"])/float(self.time.get())
         handsSet = finger.__init__(edit_fram, self.sign, motor, pub)
 
     def __init__(self, master, motors):
@@ -548,13 +534,10 @@ class RECORDING_2():
 
 
         print('Starting the ROBOT')
-        present_position = {"Robot": [motor[name].present_position for name in self.deadmotors],
-                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
-                            "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
         goal_position = {"Robot": [0 for name in self.deadmotors],
                          "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
                          "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
-        tools.go_to_pos(self.deadmotors, present_position, goal_position, pub)
+        tools.go_to_pos(self.deadmotors, motor, goal_position, pub)
         tools.releas(self.motorsName, pub)
         print('Robot started')
         self.info.set("Robot is Ready")

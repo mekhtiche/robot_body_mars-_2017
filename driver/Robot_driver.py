@@ -104,14 +104,14 @@ def publisher():
                 print robot_status
                 Closing()
                 return
-        time.sleep(0.01)
+        time.sleep(0.001)
 
 if __name__ == '__main__':
 
     rospy.init_node('robot_node', anonymous=True)
     Openning()
     for m in robot.motors:
-        pub[m.name] = rospy.Publisher('poppy/get/'+ m.name, motorStat, queue_size=10)
+        pub[m.name] = rospy.Publisher('poppy/get/'+ m.name, motorStat, queue_size=1)
         rospy.Subscriber('poppy/set/'+ m.name, motorSet, callback=callback, callback_args=m)
     print 'ROBOT publishers & subscribers successful initial'
     thread.start_new_thread(publisher, ())

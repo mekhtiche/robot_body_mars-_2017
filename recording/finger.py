@@ -45,19 +45,12 @@ def __init__(master, movement, motor, pub):
     active_motors = master.movement['actors_NAME']
     dead_motors = [name for name in motor if name not in active_motors]
     print('Starting the ROBOT')
-    present_position = {"Robot": [motor[name].present_position for name in active_motors],
-                        "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
-                        "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
     goal_position = master.movement['position']['0']
-    tools.go_to_pos(active_motors, present_position, goal_position, pub)
-
-    present_position = {"Robot": [motor[name].present_position for name in dead_motors],
-                        "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
-                        "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+    tools.go_to_pos(active_motors, motor, goal_position, pub)
     goal_position = {"Robot": [0 for name in dead_motors],
                      "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
                      "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
-    tools.go_to_pos(dead_motors, present_position, goal_position, pub)
+    tools.go_to_pos(dead_motors, motor, goal_position, pub)
     print('Robot started')
 
 
@@ -262,21 +255,14 @@ def __init__(master, movement, motor, pub):
                 return
         print 'closing the robot'
         tools.multi_servo_set([200, 200, 100, 100, 200, 100, 100, 100, 100], [200, 200, 100, 100, 200, 100, 100, 100, 100], L, R)
-        present_position = {"Robot": [motor[name].present_position for name in dead_motors],
-                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
-                            "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
         goal_position = {"Robot": [0 for name in dead_motors],
                          "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
                          "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
-        tools.go_to_pos(dead_motors, present_position, goal_position, pub)
-
-        present_position = {"Robot": [motor[name].present_position for name in active_motors],
-                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
-                            "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+        tools.go_to_pos(dead_motors, motor, goal_position, pub)
         goal_position = {"Robot": [0 for name in active_motors],
                          "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100],
                          "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100]}
-        tools.go_to_pos(active_motors, present_position, goal_position, pub)
+        tools.go_to_pos(active_motors, motor, goal_position, pub)
         tools.releas(active_motors, pub, L, R)
         print 'Robot Closed'
 
@@ -351,13 +337,10 @@ def __init__(master, movement, motor, pub):
 
         time.sleep(0.5)
         print 'Playing'
-        for frame in range(master.frm, master.movement['frame_number']):
-
-            tools.do_seq(active_motors, 100, {'0': master.movement['position'][str(frame)]}, pub)
-
-            tools.multi_servo_set(master.movement['position'][str(frame)]['Left_hand'], master.movement['position'][str(frame)]['Right_hand'], L, R)
-            time.sleep(1/float(master.movement['freq']))
-        master.recSlider.set(frame)
+        goal_position = master.movement["position"]["0"]
+        tools.go_to_pos(active_motors, motor, goal_position, pub, L, R)
+        tools.do_seq(active_motors, master.movement["freq"], master.movement["position"],pub, L, R)
+        master.recSlider.set(master.movement["frame_number"])
         print 'Done'
 
     def clearcall():

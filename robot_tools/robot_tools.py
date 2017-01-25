@@ -14,16 +14,19 @@ def releas(names,pub, L=None, R=None):
 
 
 def do_seq(names, freq, seq, pub, L=None, R=None):
-
     for frame in range(len(seq)):
+        #start = time.time()
         id = 0
         for name in names:
             motor.compliant = False
             motor.goal_position = seq[str(frame)]['Robot'][id]
             pub[name].publish(motor)
             id += 1
-        if (L is not None) & (R is not None):
+        if (L is not None) | (R is not None):
             multi_servo_set(seq[str(frame)]['Left_hand'], seq[str(frame)]['Right_hand'], L, R)
+        #end = time.time()
+        #if end - start < 1 / float(freq):
+        #    time.sleep(1 / float(freq) - (end-start))
         time.sleep(1 / float(freq))
 
 def build_seq(curent_pos, pos, max_err):
@@ -54,9 +57,12 @@ def build_sign(first_pos, final_pos, init_fram, max_err, method="Smooth"):
         i += 1
     return pre_sign
 
-def go_to_pos(motors, present_position, goal_position, pub, L=None, R=None):
+def go_to_pos(motors, motor, goal_position, pub, L=None, R=None, left_hand=None, right_hand=None):
     err_max = 5
     try:
+        present_position = {"Robot": [motor[name].present_position for name in motors],
+                            "Right_hand": right_hand if right_hand is not None else [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                            "Left_hand": left_hand if left_hand is not None else [200, 200, 100, 100, 200, 100, 100, 100, 100]}
         max_err = 0
         for id in range(len(goal_position["Robot"])):
             max_err = max([abs(goal_position["Robot"][id] - present_position["Robot"][id]), max_err])
@@ -70,17 +76,14 @@ def go_to_pos(motors, present_position, goal_position, pub, L=None, R=None):
             do_seq(motors, 100, pos, pub)
     except Exception, err:
         print 'Robot can go, error is '
-        print  err
-
-
-
+        print err
 
 def multi_servo_set(Lcommand=None, Rcommand=None, L=None, R=None):
 
-    if Lcommand is not None:
+    if (Lcommand is not None) & (L is not None):
         for servo in range(1,10):
             L[servo].publish(Lcommand[servo - 1])
-    if Rcommand is not None:
+    if (Rcommand is not None) & (R is not None):
         for servo in range(1,10):
             R[servo].publish(Rcommand[servo - 1])
 

@@ -3,7 +3,6 @@ import sys,os.path
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
 import json
 import rospy
-import time
 import thread
 from std_msgs.msg import String
 from robot_body.msg import motorSet
@@ -24,25 +23,26 @@ for servo in range(1, 10):
 print "WORD_LISTENNER successful import"
 list = ['abs_z', 'bust_y', 'bust_x', 'head_z', 'head_y', 'l_shoulder_y', 'l_shoulder_x', 'l_arm_z', 'l_elbow_y',
             'l_forearm_z', 'r_shoulder_y', 'r_shoulder_x', 'r_arm_z', 'r_elbow_y', 'r_forearm_z']
-activemotors = ['abs_z', 'bust_y', 'bust_x']
-names = [x for x in list if x not in activemotors]
-err_max = 5
+torso = ['abs_z', 'bust_y', 'bust_x']
+right_hand_motors = ['r_shoulder_y', 'r_shoulder_x', 'r_arm_z', 'r_elbow_y', 'r_forearm_z']
+left_hand_motors  = ['l_shoulder_y', 'l_shoulder_x', 'l_arm_z', 'l_elbow_y', 'l_forearm_z']
+names = [x for x in list if x not in torso]
 pub = dict()
 motor = motorSet()
 present_pos = {}
 present_position = {'Robot': [], 'Right_hand': [], 'Left_hand': []}
 buffer = []
 
-
 def callback(data):
     buffer.append(data.data)
 
 def get_motors(data):
-    present_pos[data.name] = data.present_position
+    present_pos[data.name] = data
 
 def do_sign(buffer):
     right_hand = [200, 200, 100, 100, 200, 100, 100, 100, 100]
     left_hand  = [200, 200, 100, 100, 200, 100, 100, 100, 100]
+    old_motors = []
     while True:
         if buffer:
             try:
@@ -53,31 +53,31 @@ def do_sign(buffer):
                     names = movement["actors_NAME"]
                     frames = movement["frame_number"]
                     freq = float(movement["freq"])
-                    print freq
                     sign = movement["position"]
-                    id = 0
-                    max_err = 0
-                    for name in names:
-                        max_err = max([abs(sign['0']['Robot'][id]-present_pos[name]), max_err])
-                        id +=1
-                if max_err > err_max:
-                    present_position = {'Robot': [present_pos[name] for name in names], 'Right_hand': right_hand, 'Left_hand': left_hand}
-                    goal_position = sign['0']
-                    pre_sign = tools.build_seq(present_position, goal_position, int(max_err))
-                    tools.do_seq(names, max_err, pre_sign, pub, L, R)
-                tools.do_seq(names, freq, sign, pub, L, R)
-                right_hand = sign[str(frames - 1)]["Right_hand"]
-                left_hand  = sign[str(frames - 1)]["Left_hand"]
-                if not buffer:
-                    present_position = {'Robot': [present_pos[name] for name in names], 'Right_hand': right_hand, 'Left_hand': left_hand}
-                    right_hand = [200, 200, 100, 100, 200, 100, 100, 100, 100]
-                    left_hand = [200, 200, 100, 100, 200, 100, 100, 100, 100]
-                    goal_position = {'Robot': [0 for name in names], 'Right_hand': right_hand, 'Left_hand': left_hand}
-                    max_err = max(map(abs, present_position["Robot"]))
-                    if max_err > err_max:
-                        post_sign = tools.build_seq(present_position, goal_position, int(max_err))
-                        tools.do_seq(names, max_err, post_sign, pub, L, R)
-                    tools.releas(names, pub, L, R)
+                    motor_to_release = [mtr for mtr in old_motors if (mtr not in names) & (mtr not in torso)]
+                    if motor_to_release:
+                        goal_position = {"Robot": sign['0']['Robot']+[0 for name in motor_to_release],
+                            "Right_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100] if [mtr for mtr in motor_to_release if mtr in right_hand_motors]
+                            else sign['0']['Right_hand'],
+                            "Left_hand": [200, 200, 100, 100, 200, 100, 100, 100, 100] if [mtr for mtr in motor_to_release if mtr in left_hand_motors]
+                            else sign['0']['Left_hand']}
+                    else:
+                        goal_position = sign['0']
+                    tools.go_to_pos(names+motor_to_release, present_pos, goal_position, pub, L, R, left_hand, right_hand)
+                    tools.releas(motor_to_release, pub)
+                    tools.do_seq(names, freq, sign, pub, L, R)
+                    right_hand = sign[str(frames - 1)]["Right_hand"]
+                    left_hand  = sign[str(frames - 1)]["Left_hand"]
+                    old_motors = names
+                    if not buffer:
+                        goal_position = {'Robot': [0 for name in names],
+                                         'Right_hand': [200, 200, 100, 100, 200, 100, 100, 100, 100],
+                                         'Left_hand': [200, 200, 100, 100, 200, 100, 100, 100, 100]}
+                        tools.go_to_pos(names, present_pos, goal_position, pub, L, R, left_hand, right_hand)
+                        right_hand = [200, 200, 100, 100, 200, 100, 100, 100, 100]
+                        left_hand = [200, 200, 100, 100, 200, 100, 100, 100, 100]
+                        tools.releas(names, pub, L, R)
+                        old_motors = []
             except Exception, err:
                 print 'Robot can not start, error is '
                 print  err
@@ -88,12 +88,10 @@ def listener():
 
     rospy.init_node('listener', anonymous=True)
     rospy.Subscriber('Word', String, callback=callback)
-    list = ['abs_z', 'bust_y', 'bust_x', 'head_z', 'head_y', 'l_shoulder_y', 'l_shoulder_x', 'l_arm_z', 'l_elbow_y',
-            'l_forearm_z', 'r_shoulder_y', 'r_shoulder_x', 'r_arm_z', 'r_elbow_y', 'r_forearm_z']
     for name in list:
         pub[name] = rospy.Publisher('poppy/set/' + name, motorSet, queue_size=1)
         rospy.Subscriber('poppy/get/' + name, motorStat, callback=get_motors)
-        present_pos[name]=[]
+        present_pos[name]=motorStat
     print 'WORD_LISTENER publishers & subscribers successful Initial'
     rospy.spin()
 
