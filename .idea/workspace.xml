@@ -4,17 +4,7 @@
     <bookmark url="file://$PROJECT_DIR$/robot_tools/robot_stat.py" line="34" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f634bd1a-e520-4431-bd2c-72f7fdb5663e" name="Default" comment="single motor update">
-      <change type="MOVED" beforePath="$PROJECT_DIR$/recording/data_base/Where.json" afterPath="$PROJECT_DIR$/recording/data_base/WHERE.json" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/recording/data_base/hospital.json" afterPath="$PROJECT_DIR$/recording/data_base/HOSPITAL.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/driver/Robot_driver.py" afterPath="$PROJECT_DIR$/driver/Robot_driver.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/driver/word_listener.py" afterPath="$PROJECT_DIR$/driver/word_listener.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/recording/HiPoppy.py" afterPath="$PROJECT_DIR$/recording/HiPoppy.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/recording/finger.py" afterPath="$PROJECT_DIR$/recording/finger.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/recording/handSetting.json" afterPath="$PROJECT_DIR$/recording/handSetting.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/robot_tools/robot_tools.py" afterPath="$PROJECT_DIR$/robot_tools/robot_tools.py" />
-    </list>
+    <list default="true" id="f634bd1a-e520-4431-bd2c-72f7fdb5663e" name="Default" comment="single motor update" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
