@@ -1,8 +1,15 @@
 import time
+import pypot.robot
+
+print 'ROBOT succiful import'
 
 
+robot = pypot.robot.from_config(pypot.robot.config.test_config)
 
-start = time.time()
-print 'cccc'
-end = time.time()
-print (end - start) * 1000
+
+print "robot started"
+
+
+while True:
+    for m in robot.motors:
+        print m.present_position

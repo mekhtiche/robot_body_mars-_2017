@@ -39,26 +39,20 @@ def get_motor_list(config):
 
 
 
-
 def from_config(config, strict=True, sync=True, use_dummy_io=False, **extra):
     """ Returns a :class:`~pypot.robot.robot.Robot` instance created from a configuration dictionnary.
-
         :param dict config: robot configuration dictionary
         :param bool strict: make sure that all ports, motors are availaible.
         :param bool sync: choose if automatically starts the synchronization loops
-
         For details on how to write such a configuration dictionnary, you should refer to the section :ref:`config_file`.
-
         """
     logger.info('Loading config... ', extra={'config': config})
 
     alias = config['motorgroups']
-    global motor_names#
-    activeMotors = extra.get('activemotors')
+
     # Instatiate the different motor controllers
     controllers = []
     for c_name, c_params in config['controllers'].items():
-
         motor_names = sum([_motor_extractor(alias, name)
                            for name in c_params['attached_motors']], [])
 
@@ -88,8 +82,15 @@ def from_config(config, strict=True, sync=True, use_dummy_io=False, **extra):
         else:
             controllers.append(DummyController(attached_motors))
 
-    robot = Robot(motor_controllers=controllers, sync=sync)
-    make_alias(config, activeMotors, robot)
+    try:
+        robot = Robot(motor_controllers=controllers, sync=sync)
+    except RuntimeError:
+        for c in controllers:
+            c.io.close()
+
+        raise
+
+    make_alias(config, robot)
 
     # Create all sensors and attached them
     try:
@@ -185,7 +186,12 @@ def dxl_io_from_confignode(config, c_params, ids, strict):
                       use_sync_read=sync_read,
                       error_handler_cls=handler)
 
-    found_ids = dxl_io.scan(ids)
+    try:
+        found_ids = dxl_io.scan(ids)
+    except pypot.dynamixel.io.DxlError:
+        dxl_io.close()
+        found_ids = []
+
     if ids != found_ids:
         missing_ids = tuple(set(ids) - set(found_ids))
         msg = 'Could not find the motors {} on bus {}.'.format(missing_ids,
@@ -193,6 +199,7 @@ def dxl_io_from_confignode(config, c_params, ids, strict):
         logger.warning(msg)
 
         if strict:
+            dxl_io.close()
             raise pypot.dynamixel.io.DxlError(msg)
 
     return dxl_io
@@ -258,13 +265,12 @@ def instatiate_motors(config):
     return motors
 
 
-def make_alias(config, activeMotors, robot):
-    global motor_names
-    alias = {'Active_motors':activeMotors, 'Dead_motors':list(set(motor_names) - set(activeMotors))}#config['motorgroups']
+def make_alias(config, robot):
+    alias = config['motorgroups']
 
     # Create the alias for the motorgroups
     for alias_name in alias:
-        motors = [getattr(robot, name) for name in _motor_extractor(alias, alias_name)] # motor_names] #
+        motors = [getattr(robot, name) for name in _motor_extractor(alias, alias_name)]
         setattr(robot, alias_name, motors)
         robot.alias.append(alias_name)
 
@@ -275,9 +281,7 @@ def make_alias(config, activeMotors, robot):
 
 def from_json(json_file, sync=True, strict=True, use_dummy_io=False, **extra):
     """ Returns a :class:`~pypot.robot.robot.Robot` instance created from a JSON configuration file.
-
     For details on how to write such a configuration file, you should refer to the section :ref:`config_file`.
-
     """
     with open(json_file) as f:
         config = json.load(f, object_pairs_hook=OrderedDict)
@@ -298,6 +302,51 @@ def _motor_extractor(alias, name):
     for key in alias[name]:
         l += _motor_extractor(alias, key) if key in alias else [key]
     return l
+
+
+
+test_config = {
+  "controllers": {
+    "rx_controller": {
+      "sync_read": True,
+      "attached_motors": [
+        "head"
+      ],
+      "port": "auto"
+    }
+  },
+  "motorgroups": {
+    "head": [
+      "head_z",
+      "head_y"
+    ]
+  },
+  "motors": {
+    "head_y": {
+      "offset": 0.0,
+      "type": "RX-64",
+      "id": 134,
+      "angle_limit": [
+        -150,
+        150
+      ],
+      "orientation": "indirect"
+    },
+    "head_z": {
+      "offset": 0.0,
+      "type": "RX-64",
+      "id": 141,
+      "angle_limit": [
+        -150,
+        150
+      ],
+      "orientation": "direct"
+    }
+  }
+}
+
+
+
 
 
 robot_config = {

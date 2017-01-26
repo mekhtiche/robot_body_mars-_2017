@@ -14,7 +14,7 @@ import robot_tools.robot_tools as tools
 print 'ROBOT succiful import'
 
 activemotors = {'abs_z', 'bust_y', 'bust_x'}
-robot = pypot.robot.from_config(pypot.robot.config.robot_config, True, True, False, activemotors=activemotors)
+robot = pypot.robot.from_config(pypot.robot.config.robot_config)
 err_max = 10
 
 pupStat = rospy.Publisher('Robot_status', String, queue_size=10)
@@ -29,24 +29,22 @@ def Openning():
     try:
         right_hand = [200, 200, 100, 100, 200, 100, 100, 100, 100]
         left_hand = [200, 200, 100, 100, 200, 100, 100, 100, 100]
-        present_position = {"Robot": [m.present_position for m in robot.Active_motors], 'Right_hand': right_hand, 'Left_hand': left_hand}
-        goal_position = {"Robot": [0 for m in robot.Active_motors], 'Right_hand': right_hand, 'Left_hand': left_hand}
+        present_position = {"Robot": [m.present_position for m in robot.torso], 'Right_hand': right_hand, 'Left_hand': left_hand}
+        goal_position = {"Robot": [0 for m in robot.torso], 'Right_hand': right_hand, 'Left_hand': left_hand}
         max_err = max(map(abs,present_position["Robot"]))
         if max_err > err_max:
             preset = tools.build_seq(present_position, goal_position, int(max_err))
             for frame in range(len(preset)):
                 id = 0
-                for m in robot.Active_motors:
+                for m in robot.torso:
                     m.compliant = False
                     m.goal_position = preset[str(frame)]['Robot'][id]
                     id+=1
                 time.sleep(1/max_err)
         else:
             print 'robot in initial pos'
-            for m in robot.Active_motors:
+            for m in robot.torso:
                 m.compliant = False
-            for m in robot.motors:
-                m.goal_position = 0
 
         robot_status = 'Ready'
         pupStat.publish(robot_status)
