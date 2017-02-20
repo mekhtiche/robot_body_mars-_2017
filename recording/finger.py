@@ -6,6 +6,7 @@ import tkSimpleDialog
 from Tkinter import *
 import rospy
 from std_msgs.msg import Int16
+from robot_body.msg import Emotion
 import robot_tools.robot_tools as tools
 import json
 import numpy as np
@@ -16,10 +17,14 @@ import numpy as np
 R = dict()
 L = dict()
 
+
+emotions=['show text', 'normal', 'happy1', 'happy2', 'angry', 'play', 'robot', 'yellow']
+show=Emotion()
 for servo in range(1, 10):
     R[servo] = rospy.Publisher('servo/R' + str(servo), Int16, queue_size=10)
     L[servo] = rospy.Publisher('servo/L' + str(servo), Int16, queue_size=10)
-
+HEAD_EMO = rospy.Publisher('poppy/face/emotion', Emotion, queue_size=10)
+HEAD_TXT = rospy.Publisher('poppy/face/text', Emotion, queue_size=10)
 
 
 def __init__(master, movement, motor, pub):
@@ -273,6 +278,12 @@ def __init__(master, movement, motor, pub):
         saveFile = tkFileDialog.asksaveasfilename(defaultextension="json", initialdir="/home/odroid/catkin_ws/src/robot_body/recording/data_base", parent=master)
         if not saveFile:
             return None
+        if list(master.emotion_list.curselection()):
+            if master.emotion_list.get(master.emotion_list.curselection())=='show text':
+                master.movement['text']=master.text.get()
+            else:
+                master.movement['emotion_name']=master.emotion_list.get(master.emotion_list.curselection())
+            master.movement['emotion_time']=master.emotion_time.get()
         with open(saveFile, "w") as record:
             json.dump(master.movement, record)
         print 'saved'
@@ -339,7 +350,24 @@ def __init__(master, movement, motor, pub):
         print 'Playing'
         goal_position = master.movement["position"]["0"]
         tools.go_to_pos(active_motors, motor, goal_position, pub, L, R)
-        tools.do_seq(active_motors, master.movement["freq"], master.movement["position"],pub, L, R)
+
+
+
+        if list(master.emotion_list.curselection()):
+            if master.emotion_list.get(master.emotion_list.curselection())=='show text':
+                print 'text'
+                HEAD_PUB = HEAD_TXT
+                show.name = master.text.get()
+            else:
+                print 'emotion'
+                HEAD_PUB = HEAD_EMO
+                show.name = master.emotion_list.get(master.emotion_list.curselection())
+            show.time = float(master.emotion_time.get())
+            print show
+        else:
+            HEAD_PUB = None
+
+        tools.do_seq(active_motors, master.movement["freq"], master.movement["position"],pub, L, R, HEAD_PUB, show)
         master.recSlider.set(master.movement["frame_number"])
         print 'Done'
 
@@ -413,10 +441,10 @@ def __init__(master, movement, motor, pub):
 
         for name, pos in handSetting["Left"].items():
 
-            L_handSets.insert(END, str(name))
+            L_handSets.insert(END, (name))
         for name, pos in handSetting["Right"].items():
 
-            R_handSets.insert(END, str(name))
+            R_handSets.insert(END, (name))
     except Exception, err:
         print err
 
@@ -467,7 +495,6 @@ def __init__(master, movement, motor, pub):
         else:
             print "No setting is selected"
 
-
     def R_DEL():
 
         if list(R_handSets.curselection()):
@@ -481,8 +508,6 @@ def __init__(master, movement, motor, pub):
         else:
             print "No setting is selected"
 
-
-
     leftSet = Button(medButt, text="<<", width=5, command=setleft)
     leftSet.grid(row=3, column=0, sticky=E)
     LDEL = Button(medButt, text="DEL", width=5, command=L_DEL)
@@ -492,7 +517,6 @@ def __init__(master, movement, motor, pub):
     rightSet.grid(row=3, column=3, sticky=W)
     RDEL = Button(medButt, text="DEL", width=5, command=R_DEL)
     RDEL.grid(row=3, column=2, sticky=E)
-
     master.steps = StringVar(master, value=1)
     master.frm = 0
     master.recSlider = Scale(buttfram, from_=0, to=master.movement['frame_number']-1, orient=HORIZONTAL, length=910, command=setframe)
@@ -519,16 +543,24 @@ def __init__(master, movement, motor, pub):
     clear = Button(buttfram, text='Clear', width=10, command=clearcall)
     clear.grid(row=6, column=0)
     clear.config(state=DISABLED)
+    master.emotion_list = Listbox(buttfram, width=15, height=13)
+    master.emotion_list.grid(row=2, column=2, rowspan=5, sticky=W)
 
-    msg = Label(buttfram, height=6, justify=LEFT, text='<----- Click here to record a hand set.\n\n'
-                                                        '<----- Click here to build or play the recording. \n\n'
-                                                        '<----- Click here to save.')
-    msg.grid(row=3, column=1, rowspan=3, sticky=W)
+
+    for name in emotions:
+        master.emotion_list.insert(END, str(name))
+
+    master.text = StringVar()
+    master.textEntry = Entry(buttfram, width=15, textvariable=master.text)
+    master.textEntry.grid(row=1, column=2, sticky=W)
+
+    master.emotion_time = StringVar(value=2)
+    master.emotion_timeEntry = Entry(buttfram, width=3, textvariable=master.emotion_time)
+    master.emotion_timeEntry.grid(row=1, column=3, sticky=W)
+    msg = Label(buttfram, height=8, justify=LEFT, text= '<----- Click here to record a hand set.\n\n'
+                                                        '<----- Click here to build or play the recording.                    Add face emotion----->  \n\n'
+                                                        '<----- Click here to save. \n\n'
+                                                        '<----- Click here to clear all and start over')
+    msg.grid(row=3, column=1, rowspan=4, sticky=W)
     master.needToBuild = False
     master.setted_frame = []
-
-
-
-
-
-

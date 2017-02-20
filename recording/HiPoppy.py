@@ -251,10 +251,13 @@ class RECORDING_1():
 
         self.frames = i
         self.movement = {'actors_ID':IDs,
-                       'actors_NAME':self.motorsName,
-                       'freq': self.Frq.get(),
-                       'frame_number':self.frames,
-                       'position':self.pos
+                            'actors_NAME':self.motorsName,
+                            'freq': self.Frq.get(),
+                            'frame_number':self.frames,
+                            'emotion_name':'',
+                            'text': '',
+                            'emotion_time': [],
+                            'position':self.pos
                        }
         self.save.config(state=NORMAL)
         self.play.config(state=NORMAL)
@@ -412,7 +415,9 @@ class RECORDING_2():
             return None
 
         self.sign["freq"]=float(self.sign["frame_number"])/float(self.time.get())
-
+        self.sign["emotion_name"]=''
+        self.sign["text"] = ''
+        self.sign["emotion_time"]=[]
         with open(saveFile, "w") as record:
             json.dump(self.sign, record)
         self.info.set("Saved")

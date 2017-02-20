@@ -13,9 +13,10 @@ def releas(names,pub, L=None, R=None):
         multi_servo_set([0]*9, [0]*9, L, R)
 
 
-def do_seq(names, freq, seq, pub, L=None, R=None):
+def do_seq(names, freq, seq, pub, L=None, R=None, HEAD=None, emotion=None):
+    if (HEAD is not None) & (emotion is not None):
+        HEAD.publish(emotion)
     for frame in range(len(seq)):
-        #start = time.time()
         id = 0
         for name in names:
             motor.compliant = False
@@ -24,9 +25,6 @@ def do_seq(names, freq, seq, pub, L=None, R=None):
             id += 1
         if (L is not None) | (R is not None):
             multi_servo_set(seq[str(frame)]['Left_hand'], seq[str(frame)]['Right_hand'], L, R)
-        #end = time.time()
-        #if end - start < 1 / float(freq):
-        #    time.sleep(1 / float(freq) - (end-start))
         time.sleep(1 / float(freq))
 
 def build_seq(curent_pos, pos, max_err):

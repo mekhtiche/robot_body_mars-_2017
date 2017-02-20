@@ -52,6 +52,7 @@ find_package(catkin REQUIRED COMPONENTS
 motorStat.msg
 #motorStatList.msg
 motorSet.msg
+Emotion.msg
 #servoSet.msg
 #servoCmd.msg
  )

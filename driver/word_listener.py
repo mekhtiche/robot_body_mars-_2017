@@ -5,8 +5,7 @@ import json
 import rospy
 import thread
 from std_msgs.msg import String
-from robot_body.msg import motorSet
-from robot_body.msg import motorStat
+from robot_body.msg import motorSet, motorStat, Emotion
 import robot_tools.robot_tools as tools
 from std_msgs.msg import Int16
 
@@ -18,8 +17,9 @@ L = dict()
 for servo in range(1, 10):
     R[servo] = rospy.Publisher('servo/R' + str(servo), Int16, queue_size=1)
     L[servo] = rospy.Publisher('servo/L' + str(servo), Int16, queue_size=1)
-
-
+HEAD_EMO = rospy.Publisher('poppy/face/emotion', Emotion, queue_size=10)
+HEAD_TXT = rospy.Publisher('poppy/face/text', Emotion, queue_size=10)
+show = Emotion()
 print "WORD_LISTENNER successful import"
 list = ['abs_z', 'bust_y', 'bust_x', 'head_z', 'head_y', 'l_shoulder_y', 'l_shoulder_x', 'l_arm_z', 'l_elbow_y',
             'l_forearm_z', 'r_shoulder_y', 'r_shoulder_x', 'r_arm_z', 'r_elbow_y', 'r_forearm_z']
@@ -53,6 +53,9 @@ def do_sign(buffer):
                     names = movement["actors_NAME"]
                     frames = movement["frame_number"]
                     freq = float(movement["freq"])
+                    emotion = movement["emotion_name"]
+                    text = movement["text"]
+                    time = float(movement["emotion_time"][0])
                     sign = movement["position"]
                     motor_to_release = [mtr for mtr in old_motors if (mtr not in names) & (mtr not in torso)]
                     if motor_to_release:
@@ -65,7 +68,18 @@ def do_sign(buffer):
                         goal_position = sign['0']
                     tools.go_to_pos(names+motor_to_release, present_pos, goal_position, pub, L, R, left_hand, right_hand)
                     tools.releas(motor_to_release, pub)
-                    tools.do_seq(names, freq, sign, pub, L, R)
+                    if emotion != '':
+                        print emotion
+                        HEAD_PUB = HEAD_EMO
+                        show.name = emotion
+                    elif text != '':
+                        print text
+                        HEAD_PUB = HEAD_TXT
+                        show.name = text
+                    else:
+                        HEAD_PUB = None
+                    show.time = time
+                    tools.do_seq(names, freq, sign, pub, L, R, HEAD_PUB, show)
                     right_hand = sign[str(frames - 1)]["Right_hand"]
                     left_hand  = sign[str(frames - 1)]["Left_hand"]
                     old_motors = names
