@@ -43,7 +43,23 @@ Installation:
   
       $ sudo nano .bashrc
     
-    in the end of the file add "source ~/catkin_ws/devel/setup.bash"
+    in the end of the file add 
+    
+        source ~/catkin_ws/devel/setup.bash
+        export ROS_MASTER_URI=http://odroid:11311
+        export ROSLAUNCH_SSH_UNKNOWN=1
+  
+  Add the ip addresses to the hosts
+  
+      $ sudo nano /etc/hosts
+      
+    comment the line containe ip adress of odroid then add the folowing lines
+    
+        10.42.0.1     odroid
+        10.42.0.23    right_raspberrypi
+        10.42.0.24    left_raspberrypi
+        10.42.0.25    head
+        10.42.0.71    yoga
     
     
   To launch the robot:
