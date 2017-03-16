@@ -61,6 +61,10 @@ Installation:
         10.42.0.25    head
         10.42.0.71    yoga
     
+  create new wifi Network and name it POPPY:
+  
+    goto edit network and select POPPY then click edit:
+    
     
   To launch the robot:
 
