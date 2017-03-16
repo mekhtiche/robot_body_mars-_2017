@@ -61,9 +61,9 @@ Installation:
         10.42.0.25    head
         10.42.0.71    yoga
     
-  create new wifi Network and name it POPPY:
+  create new wifi Network and name it POPPY, in wifi security select None.
   
-    goto edit network and select POPPY then click edit:
+  goto edit network and select POPPY then click edit, in wifi tab select mode as Hotspot then click save.    
     
     
   To launch the robot:
