@@ -63,7 +63,7 @@ Installation:
     
   create new wifi Network and name it POPPY, in wifi security select None.
   
-  goto edit network and select POPPY then click edit, in wifi tab select mode as Hotspot then click save.    
+  goto edit network and select POPPY then click edit, in wifi tab select mode as Hotspot then click save, in general tick Automatically connect to this network when it is available.    
     
     
   To launch the robot:
